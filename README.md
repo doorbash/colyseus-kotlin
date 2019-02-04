@@ -2,7 +2,7 @@
 
 ## Download
 
-Download [the latest JAR](https://dl.bintray.com/doorbash/ColyseusJavaClient/ir/doorbash/colyseus-java/1.0.4/colyseus-java-1.0.4.jar) or grab via Maven:
+Download [the latest JAR](https://github.com/doorbash/colyseus-java/releases/latest) or grab via Maven:
 
 ```xml
 <dependency>
