@@ -1,6 +1,6 @@
 # Colyseus Client for Java
 
-### Download
+## Download
 
 Download [the latest JAR](https://dl.bintray.com/doorbash/ColyseusJavaClient/ir/doorbash/colyseus-java/1.0.4/colyseus-java-1.0.4.jar) or grab via Maven:
 
