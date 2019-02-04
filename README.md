@@ -110,7 +110,7 @@ room.addPatchListener("players/:id", new PatchListenerCallback() {
 });
 ```
 
-### Listening to specific data changes in the state**
+### Listening to specific data changes in the state
 
 ```java
 room.addPatchListener("players/:id/:axis", new PatchListenerCallback() {
@@ -119,6 +119,15 @@ room.addPatchListener("players/:id/:axis", new PatchListenerCallback() {
         System.out.println("change: " + dataChange);
     }
 });
+```
+
+### Sending message to server
+
+```java
+LinkedHashMap<String,Object> data = new LinkedHashMap<>();
+data.put("op","key");
+data.put("key",Math.floor(Math.random() * 4));
+room.send(data);
 ```
 
 ## License
