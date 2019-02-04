@@ -82,10 +82,10 @@ public class Client {
 
     public Client(String url, LinkedHashMap<String, Object> options, Map<String, String> httpHeaders, Listener listener) throws URISyntaxException {
         this.hostname = url;
-        this.httpHeaders = httpHeaders == null ? new LinkedHashMap<>() : httpHeaders;
+        this.httpHeaders = httpHeaders == null ? new LinkedHashMap<String, String>() : httpHeaders;
         this.listener = listener;
         this.objectMapper = new ObjectMapper(new MessagePackFactory());
-        this.connect(null, options == null ? new LinkedHashMap<>() : options);
+        this.connect(null, options == null ? new LinkedHashMap<String, Object>() : options);
     }
 
     public Room join(String roomName) {
@@ -106,16 +106,16 @@ public class Client {
         return this.join(roomName, options);
     }
 
-    private Room createRoomRequest(String roomName, LinkedHashMap<String, Object> options, Room reuseRoomInstance, int retryTimes, final int retryCount) {
+    private Room createRoomRequest(final String roomName, LinkedHashMap<String, Object> options, Room reuseRoomInstance, final int retryTimes, final int retryCount) {
         System.out.println("createRoomRequest(" + roomName + "," + options + "," + reuseRoomInstance + "," + retryTimes + "," + retryCount);
         if (options == null) options = new LinkedHashMap<>();
         options.put("requestId", ++this.requestId);
 
         if (retryTimes > 0) options.put("retryTimes", retryTimes); // ?
 
-        Room room = reuseRoomInstance == null ? this.createRoom(roomName, options) : reuseRoomInstance;
+        final Room room = reuseRoomInstance == null ? this.createRoom(roomName, options) : reuseRoomInstance;
 
-        LinkedHashMap<String, Object> finalOptions = options;
+        final LinkedHashMap<String, Object> finalOptions = options;
         room.addListener(new Room.RoomListener(true) {
             @Override
             public void onLeave() {
@@ -147,21 +147,27 @@ public class Client {
         return new Room(roomName, options);
     }
 
-    public void getAvailableRooms(String roomName, GetAvailableRoomsCallback callback) {
+    public void getAvailableRooms(String roomName, final GetAvailableRoomsCallback callback) {
         // reject this promise after 10 seconds.
-        int requestId = ++this.requestId;
+        ++this.requestId;
 
-        new Thread(() -> {
-            try {
-                Thread.sleep(10000);
-                if (roomsAvailableRequests.containsKey(requestId)) {
-                    roomsAvailableRequests.remove(requestId);
-                    callback.onCallback(null, "timeout");
+        final int requestIdFinal = this.requestId;
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Thread.sleep(10000);
+                    if (!roomsAvailableRequests.containsKey(requestIdFinal)) {
+                    } else {
+                        roomsAvailableRequests.remove(requestIdFinal);
+                        callback.onCallback(null, "timeout");
+                    }
+                } catch (Exception e) {
+                    System.err.println(e);
                 }
-            } catch (Exception e) {
-                System.err.println(e);
             }
-        }).start();
+        });
 
         // send the request to the server.
         this.connection.send(Protocol.ROOM_LIST, requestId, roomName);

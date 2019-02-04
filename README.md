@@ -2,13 +2,13 @@
 
 ### Download
 
-Download [the latest JAR](https://dl.bintray.com/doorbash/ColyseusJavaClient/ir/doorbash/colyseus-java/1.0.3/colyseus-java-1.0.3.jar) or grab via Maven:
+Download [the latest JAR](https://dl.bintray.com/doorbash/ColyseusJavaClient/ir/doorbash/colyseus-java/1.0.4/colyseus-java-1.0.4.jar) or grab via Maven:
 
 ```xml
 <dependency>
     <groupId>ir.doorbash</groupId>
     <artifactId>colyseus-java</artifactId>
-    <version>1.0.3</version>
+    <version>1.0.4</version>
     <type>pom</type>
 </dependency>
 ```
@@ -16,7 +16,7 @@ Download [the latest JAR](https://dl.bintray.com/doorbash/ColyseusJavaClient/ir/
 Gradle: 
 ```groovy
 dependencies {
-    compile 'ir.doorbash:colyseus-java:1.0.3'
+    compile 'ir.doorbash:colyseus-java:1.0.4'
 }
 ```
 

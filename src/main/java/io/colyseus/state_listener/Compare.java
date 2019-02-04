@@ -6,7 +6,7 @@ public class Compare {
 
     public static List<PatchObject> compare(LinkedHashMap<String, Object> tree1, LinkedHashMap<String, Object> tree2) {
         List<PatchObject> patches = new ArrayList<>();
-        generate(tree1, tree2, patches, new ArrayList<>());
+        generate(tree1, tree2, patches, new ArrayList<String>());
         return patches;
     }
 
@@ -74,7 +74,7 @@ public class Compare {
                     // compare deeper additions
                     if (!isPrimitive(newVal.getClass()) && (newVal instanceof String)) {
                         if (newVal instanceof LinkedHashMap) {
-                            generate(new LinkedHashMap<>(), (LinkedHashMap<String, Object>) newVal, patches, addPath);
+                            generate(new LinkedHashMap<String, Object>(), (LinkedHashMap<String, Object>) newVal, patches, addPath);
                         } else if (newVal instanceof List) {
                             generate(new ArrayList<>(), (List<Object>) newVal, patches, addPath);
                         }
