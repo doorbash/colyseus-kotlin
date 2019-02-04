@@ -89,7 +89,7 @@ room.addListener(new Room.RoomListener() {
     }
 });
 ```
-### Listening to all changes on the room state
+### Listening to all changes on the room state:
 
 ```java
 room.setDefaultPatchListener(new FallbackPatchListenerCallback() {
@@ -99,7 +99,7 @@ room.setDefaultPatchListener(new FallbackPatchListenerCallback() {
     }
 });
 ```
-### Listening to add/remove on a specific key on the room state
+### Listening to add/remove on a specific key on the room state:
 
 ```java
 room.addPatchListener("players/:id", new PatchListenerCallback() {
@@ -110,7 +110,7 @@ room.addPatchListener("players/:id", new PatchListenerCallback() {
 });
 ```
 
-### Listening to specific data changes in the state
+### Listening to specific data changes in the state:
 
 ```java
 room.addPatchListener("players/:id/:axis", new PatchListenerCallback() {
@@ -121,7 +121,7 @@ room.addPatchListener("players/:id/:axis", new PatchListenerCallback() {
 });
 ```
 
-### Sending message to server
+### Sending message to server:
 
 ```java
 LinkedHashMap<String, Object> data = new LinkedHashMap<>();
@@ -130,7 +130,7 @@ data.put("key", Math.floor(Math.random() * 4));
 room.send(data);
 ```
 
-### Getting available rooms list
+### Getting available rooms list:
 
 ```java
 client.getAvailableRooms("public", new Client.GetAvailableRoomsCallback() {
