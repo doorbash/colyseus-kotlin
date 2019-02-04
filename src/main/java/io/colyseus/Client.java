@@ -107,7 +107,7 @@ public class Client {
     }
 
     private Room createRoomRequest(final String roomName, LinkedHashMap<String, Object> options, Room reuseRoomInstance, final int retryTimes, final int retryCount) {
-        System.out.println("createRoomRequest(" + roomName + "," + options + "," + reuseRoomInstance + "," + retryTimes + "," + retryCount);
+//        System.out.println("createRoomRequest(" + roomName + "," + options + "," + reuseRoomInstance + "," + retryTimes + "," + retryCount);
         if (options == null) options = new LinkedHashMap<>();
         options.put("requestId", ++this.requestId);
 
@@ -128,7 +128,6 @@ public class Client {
             room.addListener(new Room.RoomListener(true) {
                 @Override
                 public void onError(Exception e) {
-                    System.out.println("////////////////////////////////////////////");
                     if (!room.hasJoined() && retryCount <= retryTimes) {
                         createRoomRequest(roomName, finalOptions, room, retryTimes, retryCount + 1);
                     }
@@ -231,7 +230,7 @@ public class Client {
     }
 
     private void onMessageCallback(byte[] bytes) {
-        System.out.println("Client.onMessageCallback()");
+//        System.out.println("Client.onMessageCallback()");
         try {
             MessageUnpacker unpacker = MessagePack.newDefaultUnpacker(bytes);
             Value val = unpacker.unpackValue();
@@ -243,30 +242,30 @@ public class Client {
                     switch (code) {
                         case Protocol.USER_ID: {
                             //TODO: store user id
-                            System.out.println("Protocol: USER_ID");
+//                            System.out.println("Protocol: USER_ID");
                             this.id = arrayValue.get(1).asStringValue().asString();
-                            System.out.println("colyseus id : " + this.id);
+//                            System.out.println("colyseus id : " + this.id);
                             if (Client.this.listener != null) Client.this.listener.onOpen();
                         }
                         break;
                         case Protocol.JOIN_ROOM: {
-                            System.out.println("Protocol: JOIN_ROOM");
+//                            System.out.println("Protocol: JOIN_ROOM");
                             int requestId = arrayValue.get(2).asIntegerValue().asInt();
-                            System.out.println("requestId: " + requestId);
+//                            System.out.println("requestId: " + requestId);
                             Room room = this.connectingRooms.get(requestId);
                             if (room == null) {
-                                System.out.println("client left room before receiving session id.");
+//                                System.out.println("client left room before receiving session id.");
                                 return;
                             }
                             room.setId(arrayValue.get(1).asStringValue().asString());
-                            System.out.println("room.id: " + room.getId());
+//                            System.out.println("room.id: " + room.getId());
                             this.rooms.put(room.getId(), room);
                             room.connect(buildEndpoint(room.getId(), room.getOptions()), httpHeaders);
                             connectingRooms.remove(requestId);
                         }
                         break;
                         case Protocol.JOIN_ERROR: {
-                            System.out.println("Protocol: JOIN_ERROR");
+//                            System.out.println("Protocol: JOIN_ERROR");
                             System.err.println("colyseus.js: server error: + " + arrayValue.get(2).toString());
                             // general error
                             if (this.listener != null)
@@ -274,9 +273,9 @@ public class Client {
                         }
                         break;
                         case Protocol.ROOM_LIST: {
-                            System.out.println("Protocol: ROOM_LIST");
+//                            System.out.println("Protocol: ROOM_LIST");
                             int id = arrayValue.get(1).asIntegerValue().asInt();
-                            System.out.println("id: " + id);
+//                            System.out.println("id: " + id);
                             ArrayValue roomsArrayValue = arrayValue.get(2).asArrayValue();
                             List<AvailableRoom> availableRooms = new ArrayList<>();
                             for (int i = 0; i < roomsArrayValue.size(); i++) {

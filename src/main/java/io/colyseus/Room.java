@@ -95,7 +95,7 @@ public class Room extends StateContainer {
 
     Room(String roomName, LinkedHashMap<String, Object> options) {
         super(new LinkedHashMap<String, Object>());
-        System.out.println("Room created: name: " + roomName + ", options: " + options);
+//        System.out.println("Room created: name: " + roomName + ", options: " + options);
         this.name = roomName;
         this.options = options;
         this.objectMapper = new ObjectMapper(new MessagePackFactory());
