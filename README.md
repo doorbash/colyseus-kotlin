@@ -25,7 +25,7 @@ dependencies {
 ### Connecting to server:
 
 ```java
-Client client = new Client("http://localhost:3000", new Client.Listener() {
+Client client = new Client("ws://localhost:3000", new Client.Listener() {
     @Override
     public void onOpen() {
         System.out.println("Client.onOpen()");
@@ -124,10 +124,22 @@ room.addPatchListener("players/:id/:axis", new PatchListenerCallback() {
 ### Sending message to server
 
 ```java
-LinkedHashMap<String,Object> data = new LinkedHashMap<>();
-data.put("op","key");
-data.put("key",Math.floor(Math.random() * 4));
+LinkedHashMap<String, Object> data = new LinkedHashMap<>();
+data.put("op", "key");
+data.put("key", Math.floor(Math.random() * 4));
 room.send(data);
+```
+
+### Getting available rooms list
+
+```java
+client.getAvailableRooms("public", new Client.GetAvailableRoomsCallback() {
+    @Override
+    public void onCallback(List<Client.AvailableRoom> roomsAvailable, String error) {
+        System.out.println(roomsAvailable.toString());
+        if (error != null) System.out.println(error);
+    }
+});
 ```
 
 ## License
