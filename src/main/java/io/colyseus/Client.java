@@ -97,6 +97,10 @@ public class Client {
         this.connect(null, options == null ? new LinkedHashMap<String, Object>() : options, connectTimeout);
     }
 
+    public String getId() {
+        return this.id;
+    }
+
     public Room join(String roomName) {
         return this.createRoomRequest(roomName, null, null, 0, 0);
     }
