@@ -72,7 +72,7 @@ public class Compare {
                 Object newVal = obj.get(key);
                 if (newVal != null) {
                     // compare deeper additions
-                    if (!isPrimitive(newVal.getClass()) && (newVal instanceof String)) {
+                    if (!isPrimitive(newVal.getClass()) && !(newVal instanceof String)) {
                         if (newVal instanceof LinkedHashMap) {
                             generate(new LinkedHashMap<String, Object>(), (LinkedHashMap<String, Object>) newVal, patches, addPath);
                         } else if (newVal instanceof List) {

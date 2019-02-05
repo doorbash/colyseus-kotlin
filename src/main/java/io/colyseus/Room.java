@@ -253,7 +253,15 @@ public class Room extends StateContainer {
     }
 
     public void send(Object data) {
-        this.connection.send(Protocol.ROOM_DATA, this.id, data);
+        if(this.connection != null)
+            this.connection.send(Protocol.ROOM_DATA, this.id, data);
+        // room is created but not joined yet
+        List<RoomListener> toRemove = new ArrayList<>();
+        for (RoomListener listener : listeners) {
+            listener.onError(new Exception("send error: Room is created but not joined yet"));
+            if (listener.once) toRemove.add(listener);
+        }
+        listeners.removeAll(toRemove);
     }
 
 
