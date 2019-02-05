@@ -8,7 +8,7 @@ Download [the latest JAR](https://github.com/doorbash/colyseus-java/releases/lat
 <dependency>
     <groupId>ir.doorbash</groupId>
     <artifactId>colyseus-java</artifactId>
-    <version>1.0.4</version>
+    <version>1.0.5</version>
     <type>pom</type>
 </dependency>
 ```
@@ -16,7 +16,7 @@ Download [the latest JAR](https://github.com/doorbash/colyseus-java/releases/lat
 Gradle: 
 ```groovy
 dependencies {
-    implementation 'ir.doorbash:colyseus-java:1.0.4'
+    implementation 'ir.doorbash:colyseus-java:1.0.5'
 }
 ```
 
@@ -27,8 +27,11 @@ dependencies {
 ```java
 Client client = new Client("ws://localhost:3000", new Client.Listener() {
     @Override
-    public void onOpen() {
-        System.out.println("Client.onOpen()");
+    public void onOpen(String id) {
+        System.out.println("Client.onOpen();");
+        System.out.println("colyseus id: " + id);
+        // you can store id on device and pass it to client next time:
+        // Client = new Client("ws://localhost:3000", id);
     }
 
     @Override
@@ -39,8 +42,7 @@ Client client = new Client("ws://localhost:3000", new Client.Listener() {
 
     @Override
     public void onClose(int code, String reason, boolean remote) {
-        System.out.println("Client.onClose()");
-        System.out.println("code: " + code + ", reason: " + reason + ", remote: " + remote);
+        System.out.println("Client.onClose();");
     }
 
     @Override
@@ -95,7 +97,9 @@ room.addListener(new Room.RoomListener() {
 room.setDefaultPatchListener(new FallbackPatchListenerCallback() {
     @Override
     public void callback(PatchObject patchObject) {
-        System.out.println("change: " + patchObject);
+        System.out.println(patchObject.path);
+        System.out.println(patchObject.operation);
+        System.out.println(patchObject.value);
     }
 });
 ```
@@ -105,7 +109,9 @@ room.setDefaultPatchListener(new FallbackPatchListenerCallback() {
 room.addPatchListener("players/:id", new PatchListenerCallback() {
     @Override
     protected void callback(DataChange dataChange) {
-        System.out.println("change: " + dataChange);
+        System.out.println(dataChange.path);
+        System.out.println(dataChange.operation);
+        System.out.println(dataChange.value);
     }
 });
 ```
@@ -116,12 +122,14 @@ room.addPatchListener("players/:id", new PatchListenerCallback() {
 room.addPatchListener("players/:id/:axis", new PatchListenerCallback() {
     @Override
     protected void callback(DataChange dataChange) {
-        System.out.println("change: " + dataChange);
+        System.out.println(dataChange.path);
+        System.out.println(dataChange.operation);
+        System.out.println(dataChange.value);
     }
 });
 ```
 
-### Sending message to server:
+### Sending message to the room handler:
 
 ```java
 LinkedHashMap<String, Object> data = new LinkedHashMap<>();
@@ -135,9 +143,9 @@ room.send(data);
 ```java
 client.getAvailableRooms("public", new Client.GetAvailableRoomsCallback() {
     @Override
-    public void onCallback(List<Client.AvailableRoom> roomsAvailable, String error) {
-        System.out.println(roomsAvailable.toString());
+    public void onCallback(List<Client.AvailableRoom> availableRooms, String error) {
         if (error != null) System.out.println(error);
+        else System.out.println(availableRooms.toString());
     }
 });
 ```
