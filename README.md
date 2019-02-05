@@ -16,7 +16,7 @@ Download [the latest JAR](https://github.com/doorbash/colyseus-java/releases/lat
 Gradle: 
 ```groovy
 dependencies {
-    compile 'ir.doorbash:colyseus-java:1.0.4'
+    implementation 'ir.doorbash:colyseus-java:1.0.4'
 }
 ```
 
