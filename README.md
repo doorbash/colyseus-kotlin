@@ -150,6 +150,11 @@ client.getAvailableRooms("public", new Client.GetAvailableRoomsCallback() {
 });
 ```
 
+
+### Usage examples
+
+- [Agar.io Clone](https://github.com/doorbash/agar.io-clone) - Simple agar.io clone using [libgdx](https://libgdx.badlogicgames.com/)
+
 ## License
 
 MIT
