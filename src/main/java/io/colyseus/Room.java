@@ -8,6 +8,8 @@ import org.msgpack.jackson.dataformat.MessagePackFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -65,11 +67,11 @@ public class Room extends StateContainer {
         this.name = name;
     }
 
-    public String getSessionId(){
+    public String getSessionId() {
         return sessionId;
     }
 
-    public void setSessionId(String sessionId){
+    public void setSessionId(String sessionId) {
         this.sessionId = sessionId;
     }
 
@@ -89,7 +91,7 @@ public class Room extends StateContainer {
         this.options = options;
     }
 
-    public LinkedHashMap<String,Object> getState() {
+    public LinkedHashMap<String, Object> getState() {
         return state;
     }
 
@@ -109,9 +111,9 @@ public class Room extends StateContainer {
         this.listeners.remove(listener);
     }
 
-    void connect(String endpoint, Map<String, String> httpHeaders) throws Exception {
+    void connect(String endpoint, Map<String, String> httpHeaders, int connectTimeout) throws URISyntaxException {
 //        System.out.println("Room is connecting to " + endpoint);
-        this.connection = new Connection(endpoint, 10000, httpHeaders, new Connection.Listener() {
+        this.connection = new Connection(new URI(endpoint), connectTimeout, httpHeaders, new Connection.Listener() {
             @Override
             public void onError(Exception e) {
                 System.err.println("Possible causes: room's onAuth() failed or maxClients has been reached.");
@@ -152,9 +154,9 @@ public class Room extends StateContainer {
         try {
             Object message = objectMapper.readValue(bytes, new TypeReference<Object[]>() {
             });
-            if(message instanceof Object[]) {
+            if (message instanceof Object[]) {
                 Object[] messageArray = (Object[]) message;
-                if(messageArray[0] instanceof Integer) {
+                if (messageArray[0] instanceof Integer) {
                     int code = (int) messageArray[0];
                     switch (code) {
                         case Protocol.JOIN_ROOM: {
@@ -206,7 +208,8 @@ public class Room extends StateContainer {
                         }
                         break;
 
-                        default: dispatchOnMessage(message);
+                        default:
+                            dispatchOnMessage(message);
                     }
                 } else dispatchOnMessage(message);
             } else dispatchOnMessage(message);
@@ -271,12 +274,11 @@ public class Room extends StateContainer {
 
     protected void patch(ArrayList<Integer> binaryPatch) throws Exception {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        for(int i=0; i < binaryPatch.size(); ++i)
-        {
+        for (int i = 0; i < binaryPatch.size(); ++i) {
             baos.write(binaryPatch.get(i) & 0xFF);
         }
         this._previousState = FossilDelta.apply(this._previousState, baos.toByteArray());
-        this.set((LinkedHashMap<String, Object>) objectMapper.readValue(this._previousState,Object.class));
+        this.set((LinkedHashMap<String, Object>) objectMapper.readValue(this._previousState, Object.class));
         List<RoomListener> toRemove = new ArrayList<>();
         for (RoomListener listener : listeners) {
             listener.onStateChange(this.state);

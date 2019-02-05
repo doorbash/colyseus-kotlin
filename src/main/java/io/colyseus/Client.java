@@ -11,6 +11,7 @@ import org.msgpack.value.Value;
 import org.msgpack.value.ValueType;
 
 import java.io.IOException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -20,10 +21,11 @@ import java.util.Map;
 public class Client {
 
     private String id;
-    private Map<String, String> httpHeaders;
+    private LinkedHashMap<String, String> httpHeaders;
+    private int connectTimeout;
 
     public interface Listener {
-        void onOpen();
+        void onOpen(String id);
 
         void onMessage(Object message);
 
@@ -64,28 +66,35 @@ public class Client {
     private LinkedHashMap<Integer, Room> connectingRooms = new LinkedHashMap<>();
     private int requestId = 0;
     private String hostname;
-    private LinkedHashMap<Integer, AvailableRoomsRequestListener> roomsAvailableRequests = new LinkedHashMap<>();
+    private LinkedHashMap<Integer, AvailableRoomsRequestListener> availableRoomsRequests = new LinkedHashMap<>();
     private Listener listener;
     private ObjectMapper objectMapper;
 
-    public Client(String url, Listener listener) throws URISyntaxException {
-        this(url, null, null, listener);
+
+    public Client(String url) {
+        this(url, null, null, null, 0, null);
     }
 
-    public Client(String url, Map<String, String> httpHeaders, Listener listener) throws URISyntaxException {
-        this(url, null, httpHeaders, listener);
+    public Client(String url, Listener listener) {
+        this(url, null, null, null, 0, listener);
     }
 
-    public Client(String url, LinkedHashMap<String, Object> options, Listener listener) throws URISyntaxException {
-        this(url, options, null, listener);
+    public Client(String url, String id) {
+        this(url, id, null, null, 0, null);
     }
 
-    public Client(String url, LinkedHashMap<String, Object> options, Map<String, String> httpHeaders, Listener listener) throws URISyntaxException {
+    public Client(String url, String id, Listener listener) {
+        this(url, id, null, null, 0, listener);
+    }
+
+    public Client(String url, String id, LinkedHashMap<String, Object> options, LinkedHashMap<String, String> httpHeaders, int connectTimeout, Listener listener) {
         this.hostname = url;
+        this.id = id;
         this.httpHeaders = httpHeaders == null ? new LinkedHashMap<String, String>() : httpHeaders;
+        this.connectTimeout = connectTimeout;
         this.listener = listener;
         this.objectMapper = new ObjectMapper(new MessagePackFactory());
-        this.connect(null, options == null ? new LinkedHashMap<String, Object>() : options);
+        this.connect(null, options == null ? new LinkedHashMap<String, Object>() : options, connectTimeout);
     }
 
     public Room join(String roomName) {
@@ -148,6 +157,7 @@ public class Client {
 
     public void getAvailableRooms(String roomName, final GetAvailableRoomsCallback callback) {
         // reject this promise after 10 seconds.
+
         ++this.requestId;
 
         final int requestIdFinal = this.requestId;
@@ -157,9 +167,9 @@ public class Client {
             public void run() {
                 try {
                     Thread.sleep(10000);
-                    if (!roomsAvailableRequests.containsKey(requestIdFinal)) {
+                    if (!availableRoomsRequests.containsKey(requestIdFinal)) {
                     } else {
-                        roomsAvailableRequests.remove(requestIdFinal);
+                        availableRoomsRequests.remove(requestIdFinal);
                         callback.onCallback(null, "timeout");
                     }
                 } catch (Exception e) {
@@ -169,13 +179,13 @@ public class Client {
         });
 
         // send the request to the server.
-        this.connection.send(Protocol.ROOM_LIST, requestId, roomName);
+        this.connection.send(Protocol.ROOM_LIST, requestIdFinal, roomName);
 
-        roomsAvailableRequests.put(requestId, new AvailableRoomsRequestListener() {
+        availableRoomsRequests.put(requestId, new AvailableRoomsRequestListener() {
             @Override
-            public void callback(List<AvailableRoom> roomsAvailable) {
-                roomsAvailableRequests.remove(requestId);
-                callback.onCallback(roomsAvailable, null);
+            public void callback(List<AvailableRoom> availableRooms) {
+                availableRoomsRequests.remove(requestIdFinal);
+                callback.onCallback(availableRooms, null);
             }
         });
     }
@@ -184,11 +194,17 @@ public class Client {
         this.connection.close();
     }
 
-    private void connect(String colyseusid, LinkedHashMap<String, Object> options) throws URISyntaxException {
-
+    private void connect(String colyseusid, LinkedHashMap<String, Object> options, int connectTimeout) {
         if (colyseusid != null) this.id = colyseusid;
-
-        this.connection = new Connection(buildEndpoint("", options), 10000, httpHeaders, new Connection.Listener() {
+        URI uri;
+        try {
+            uri = new URI(buildEndpoint("", options));
+        } catch (URISyntaxException e) {
+            if (Client.this.listener != null)
+                Client.this.listener.onError(e);
+            return;
+        }
+        this.connection = new Connection(uri, connectTimeout, httpHeaders, new Connection.Listener() {
             @Override
             public void onError(Exception e) {
                 if (Client.this.listener != null)
@@ -204,13 +220,12 @@ public class Client {
             @Override
             public void onOpen() {
                 if (Client.this.id != null && Client.this.listener != null)
-                    Client.this.listener.onOpen();
+                    Client.this.listener.onOpen(Client.this.id);
             }
 
             @Override
             public void onMessage(byte[] bytes) {
-                if (Client.this.listener != null)
-                    Client.this.onMessageCallback(bytes);
+                Client.this.onMessageCallback(bytes);
             }
         });
     }
@@ -241,11 +256,12 @@ public class Client {
                     int code = codeValue.asIntegerValue().asInt();
                     switch (code) {
                         case Protocol.USER_ID: {
-                            //TODO: store user id
 //                            System.out.println("Protocol: USER_ID");
                             this.id = arrayValue.get(1).asStringValue().asString();
 //                            System.out.println("colyseus id : " + this.id);
-                            if (Client.this.listener != null) Client.this.listener.onOpen();
+                            if (Client.this.listener != null) {
+                                Client.this.listener.onOpen(this.id);
+                            }
                         }
                         break;
                         case Protocol.JOIN_ROOM: {
@@ -254,19 +270,19 @@ public class Client {
 //                            System.out.println("requestId: " + requestId);
                             Room room = this.connectingRooms.get(requestId);
                             if (room == null) {
-//                                System.out.println("client left room before receiving session id.");
+                                System.out.println("client left room before receiving session id.");
                                 return;
                             }
                             room.setId(arrayValue.get(1).asStringValue().asString());
 //                            System.out.println("room.id: " + room.getId());
                             this.rooms.put(room.getId(), room);
-                            room.connect(buildEndpoint(room.getId(), room.getOptions()), httpHeaders);
+                            room.connect(buildEndpoint(room.getId(), room.getOptions()), httpHeaders, this.connectTimeout);
                             connectingRooms.remove(requestId);
                         }
                         break;
                         case Protocol.JOIN_ERROR: {
 //                            System.out.println("Protocol: JOIN_ERROR");
-                            System.err.println("colyseus.js: server error: + " + arrayValue.get(2).toString());
+                            System.err.println("colyseus: server error: + " + arrayValue.get(2).toString());
                             // general error
                             if (this.listener != null)
                                 this.listener.onError(new Exception(arrayValue.get(2).toString()));
@@ -299,8 +315,8 @@ public class Client {
                                 }
                                 availableRooms.add(room);
                             }
-                            if (this.roomsAvailableRequests.containsKey(id)) {
-                                this.roomsAvailableRequests.get(id).callback(availableRooms);
+                            if (this.availableRoomsRequests.containsKey(id)) {
+                                this.availableRoomsRequests.get(id).callback(availableRooms);
                             } else {
                                 System.out.println("receiving ROOM_LIST after timeout:" + roomsArrayValue);
                             }

@@ -7,7 +7,6 @@ import org.java_websocket.handshake.ServerHandshake;
 import org.msgpack.jackson.dataformat.MessagePackFactory;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
 import java.util.Map;
@@ -27,8 +26,8 @@ public class Connection extends WebSocketClient {
     private LinkedList<Object[]> _enqueuedCalls = new LinkedList<>();
     private Listener listener;
 
-    Connection(String url, int connectTimeout, Map<String, String> httpHeaders, Listener listener) throws URISyntaxException {
-        super(new URI(url), new Draft_6455(), httpHeaders, connectTimeout);
+    Connection(URI uri, int connectTimeout, Map<String, String> httpHeaders, Listener listener) {
+        super(uri, new Draft_6455(), httpHeaders, connectTimeout);
 //        System.out.println("io.colyseus.Connection()");
 //        System.out.println("url is " + url);
         this.listener = listener;

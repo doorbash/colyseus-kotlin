@@ -4,9 +4,9 @@ import java.util.List;
 
 public class PatchObject {
 
-    List<String> path;
-    String operation;
-    Object value;
+    public List<String> path;
+    public String operation;
+    public Object value;
 
     public PatchObject(String operation, List<String> path, Object value) {
         this.operation = operation;
