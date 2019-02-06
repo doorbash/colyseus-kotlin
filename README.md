@@ -1,24 +1,5 @@
-# Colyseus Client for Java
-
-## Download
-
-Download [the latest JAR](https://github.com/doorbash/colyseus-java/releases/latest) or grab via Maven:
-
-```xml
-<dependency>
-    <groupId>ir.doorbash</groupId>
-    <artifactId>colyseus-java</artifactId>
-    <version>1.0.7</version>
-    <type>pom</type>
-</dependency>
-```
-
-Gradle: 
-```groovy
-dependencies {
-    implementation 'ir.doorbash:colyseus-java:1.0.7'
-}
-```
+# Colyseus-Java
+Implementation of Colyseus client for Java / Android
 
 ## Usage
 
@@ -153,7 +134,7 @@ client.getAvailableRooms("public", new Client.GetAvailableRoomsCallback() {
 
 ### Usage examples
 
-- [Agar.io Clone](https://github.com/doorbash/agar.io-clone) - Simple agar.io clone using [libgdx](https://libgdx.badlogicgames.com/)
+- [Agar.io-Clone](https://github.com/doorbash/agar.io-clone) - Simple Agar.io game clone using [libgdx](https://libgdx.badlogicgames.com/)
 
 ## License
 
