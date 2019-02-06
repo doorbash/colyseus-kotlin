@@ -1,5 +1,26 @@
 # Colyseus-Java
+
 Implementation of Colyseus client for Java / Android
+
+## Download
+
+Download [the latest JAR](https://github.com/doorbash/colyseus-java/releases/latest) or grab via Maven:
+
+```xml
+<dependency>
+    <groupId>ir.doorbash</groupId>
+    <artifactId>colyseus-java</artifactId>
+    <version>1.0.7</version>
+    <type>pom</type>
+</dependency>
+```
+
+Gradle: 
+```groovy
+dependencies {
+    implementation 'ir.doorbash:colyseus-java:1.0.7'
+}
+```
 
 ## Usage
 
