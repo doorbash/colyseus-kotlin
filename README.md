@@ -10,7 +10,7 @@ Download [the latest JAR](https://github.com/doorbash/colyseus-java/releases/lat
 <dependency>
     <groupId>ir.doorbash</groupId>
     <artifactId>colyseus-java</artifactId>
-    <version>1.0.7</version>
+    <version>1.0.8</version>
     <type>pom</type>
 </dependency>
 ```
@@ -18,7 +18,7 @@ Download [the latest JAR](https://github.com/doorbash/colyseus-java/releases/lat
 Gradle: 
 ```groovy
 dependencies {
-    implementation 'ir.doorbash:colyseus-java:1.0.7'
+    implementation 'ir.doorbash:colyseus-java:1.0.8'
 }
 ```
 
@@ -98,10 +98,10 @@ room.addListener(new Room.RoomListener() {
 ```java
 room.setDefaultPatchListener(new FallbackPatchListenerCallback() {
     @Override
-    public void callback(PatchObject patchObject) {
-        System.out.println(patchObject.path);
-        System.out.println(patchObject.operation);
-        System.out.println(patchObject.value);
+    public void callback(PatchObject patch) {
+        System.out.println(patch.path);
+        System.out.println(patch.operation);
+        System.out.println(patch.value);
     }
 });
 ```
@@ -110,10 +110,10 @@ room.setDefaultPatchListener(new FallbackPatchListenerCallback() {
 ```java
 room.addPatchListener("players/:id", new PatchListenerCallback() {
     @Override
-    protected void callback(DataChange dataChange) {
-        System.out.println(dataChange.path);
-        System.out.println(dataChange.operation);
-        System.out.println(dataChange.value);
+    protected void callback(DataChange change) {
+        System.out.println(change.path);
+        System.out.println(change.operation);
+        System.out.println(change.value);
     }
 });
 ```
@@ -123,10 +123,10 @@ room.addPatchListener("players/:id", new PatchListenerCallback() {
 ```java
 room.addPatchListener("players/:id/:axis", new PatchListenerCallback() {
     @Override
-    protected void callback(DataChange dataChange) {
-        System.out.println(dataChange.path);
-        System.out.println(dataChange.operation);
-        System.out.println(dataChange.value);
+    protected void callback(DataChange change) {
+        System.out.println(change.path);
+        System.out.println(change.operation);
+        System.out.println(change.value);
     }
 });
 ```
