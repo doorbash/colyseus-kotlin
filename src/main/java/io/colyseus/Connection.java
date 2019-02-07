@@ -25,19 +25,21 @@ public class Connection extends WebSocketClient {
 
     private LinkedList<Object[]> _enqueuedCalls = new LinkedList<>();
     private Listener listener;
+    private ObjectMapper mapper;
 
     Connection(URI uri, int connectTimeout, Map<String, String> httpHeaders, Listener listener) {
         super(uri, new Draft_6455(), httpHeaders, connectTimeout);
-//        System.out.println("io.colyseus.Connection()");
+//        System.out.println("Connection()");
 //        System.out.println("url is " + url);
         this.listener = listener;
+        this.mapper = new ObjectMapper(new MessagePackFactory());
         connect();
     }
 
     void send(Object... data) {
         if (isOpen()) {
             try {
-                send(new ObjectMapper(new MessagePackFactory()).writeValueAsBytes(data));
+                send(mapper.writeValueAsBytes(data));
             } catch (Exception e) {
                 onError(e);
             }

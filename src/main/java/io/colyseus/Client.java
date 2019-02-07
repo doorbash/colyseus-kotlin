@@ -60,7 +60,6 @@ public class Client {
         }
     }
 
-    // signals
     private Connection connection;
     private LinkedHashMap<String, Room> rooms = new LinkedHashMap<>();
     private LinkedHashMap<Integer, Room> connectingRooms = new LinkedHashMap<>();
@@ -69,7 +68,6 @@ public class Client {
     private LinkedHashMap<Integer, AvailableRoomsRequestListener> availableRoomsRequests = new LinkedHashMap<>();
     private Listener listener;
     private ObjectMapper objectMapper;
-
 
     public Client(String url) {
         this(url, null, null, null, 0, null);
@@ -341,6 +339,7 @@ public class Client {
             }
         } catch (Exception e) {
             e.printStackTrace();
+            if (this.listener != null) this.listener.onError(e);
         }
     }
 

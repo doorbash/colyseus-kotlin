@@ -152,15 +152,15 @@ public class Room extends StateContainer {
     public void onMessageCallback(byte[] bytes) {
 //        System.out.println("Room.onMessageCallback()");
         try {
-            Object message = objectMapper.readValue(bytes, new TypeReference<Object[]>() {
+            Object message = objectMapper.readValue(bytes, new TypeReference<Object>() {
             });
-            if (message instanceof Object[]) {
-                Object[] messageArray = (Object[]) message;
-                if (messageArray[0] instanceof Integer) {
-                    int code = (int) messageArray[0];
+            if (message instanceof List) {
+                List<Object> messageArray = (List<Object>) message;
+                if (messageArray.get(0) instanceof Integer) {
+                    int code = (int) messageArray.get(0);
                     switch (code) {
                         case Protocol.JOIN_ROOM: {
-                            sessionId = (String) messageArray[1];
+                            sessionId = (String) messageArray.get(1);
                             List<RoomListener> toRemove = new ArrayList<>();
                             for (RoomListener listener : listeners) {
                                 listener.onJoin();
@@ -171,10 +171,10 @@ public class Room extends StateContainer {
                         break;
 
                         case Protocol.JOIN_ERROR: {
-                            System.err.println("Error: " + messageArray[1]);
+                            System.err.println("Error: " + messageArray.get(1));
                             List<RoomListener> toRemove = new ArrayList<>();
                             for (RoomListener listener : listeners) {
-                                listener.onError(new Exception(messageArray[1].toString()));
+                                listener.onError(new Exception(messageArray.get(1).toString()));
                                 if (listener.once) toRemove.add(listener);
                             }
                             listeners.removeAll(toRemove);
@@ -184,19 +184,19 @@ public class Room extends StateContainer {
                         case Protocol.ROOM_STATE: {
 //                    const remoteCurrentTime = message[2];
 //                    const remoteElapsedTime = message[3];
-                            setState((byte[]) messageArray[1]);
+                            setState((byte[]) messageArray.get(1));
                         }
                         break;
 
                         case Protocol.ROOM_STATE_PATCH: {
-                            patch((ArrayList<Integer>) messageArray[1]);
+                            patch((ArrayList<Integer>) messageArray.get(1));
                         }
                         break;
 
                         case Protocol.ROOM_DATA: {
                             List<RoomListener> toRemove = new ArrayList<>();
                             for (RoomListener listener : listeners) {
-                                listener.onMessage(messageArray[1]);
+                                listener.onMessage(messageArray.get(1));
                                 if (listener.once) toRemove.add(listener);
                             }
                             listeners.removeAll(toRemove);

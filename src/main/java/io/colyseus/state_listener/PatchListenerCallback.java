@@ -1,5 +1,5 @@
 package io.colyseus.state_listener;
 
 public abstract class PatchListenerCallback {
-    protected abstract void callback(DataChange dataChange);
+    protected abstract void callback(DataChange change);
 }

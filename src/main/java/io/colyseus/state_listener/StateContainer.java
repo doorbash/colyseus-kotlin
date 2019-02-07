@@ -85,12 +85,12 @@ public class StateContainer {
             for (PatchListener listener : this._listeners) {
                 LinkedHashMap<String, String> pathVariables = this.getPathVariables(patches.get(i), listener);
                 if (pathVariables != null) {
-                    DataChange dataChange = new DataChange();
-                    dataChange.path = pathVariables;
-                    dataChange.operation = patches.get(i).operation;
-                    dataChange.value = patches.get(i).value;
+                    DataChange change = new DataChange();
+                    change.path = pathVariables;
+                    change.operation = patches.get(i).operation;
+                    change.value = patches.get(i).value;
 
-                    listener.callback.callback(dataChange);
+                    listener.callback.callback(change);
                     matched = true;
                 }
             }
