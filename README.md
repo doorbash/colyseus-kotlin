@@ -32,8 +32,6 @@ Client client = new Client("ws://localhost:2657", new Client.Listener() {
     public void onOpen(String id) {
         System.out.println("Client.onOpen();");
         System.out.println("colyseus id: " + id);
-        // You can store id on device and pass it to client next time:
-        // Client = new Client("ws://localhost:2657", id);
     }
 
     @Override
