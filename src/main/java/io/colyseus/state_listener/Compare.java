@@ -2,15 +2,15 @@ package io.colyseus.state_listener;
 
 import java.util.*;
 
-public class Compare {
+class Compare {
 
-    public static List<PatchObject> compare(LinkedHashMap<String, Object> tree1, LinkedHashMap<String, Object> tree2) {
+    static List<PatchObject> compare(LinkedHashMap<String, Object> tree1, LinkedHashMap<String, Object> tree2) {
         List<PatchObject> patches = new ArrayList<>();
         generate(tree1, tree2, patches, new ArrayList<String>());
         return patches;
     }
 
-    public static void generate(List<Object> mirror, List<Object> obj, List<PatchObject> patches, List<String> path) {
+    private static void generate(List<Object> mirror, List<Object> obj, List<PatchObject> patches, List<String> path) {
         LinkedHashMap<String, Object> mirrorDict = new LinkedHashMap<>();
         for (int i = 0; i < mirror.size(); i++) {
             mirrorDict.put(String.valueOf(i), mirror.get(i));
@@ -24,7 +24,7 @@ public class Compare {
         generate(mirrorDict, objDict, patches, path);
     }
 
-    public static void generate(LinkedHashMap<String, Object> mirror, LinkedHashMap<String, Object> obj, List<PatchObject> patches, List<String> path) {
+    private static void generate(LinkedHashMap<String, Object> mirror, LinkedHashMap<String, Object> obj, List<PatchObject> patches, List<String> path) {
         Set<String> newKeys = obj.keySet();
         Set<String> oldKeys = mirror.keySet();
         boolean deleted = false;

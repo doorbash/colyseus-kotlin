@@ -90,7 +90,7 @@ public class FossilDelta {
     }
 
     static class CustomByteArrayOutputStream extends ByteArrayOutputStream {
-        public byte[] getBuf(){
+        byte[] getBuf(){
             return this.buf;
         }
     }
