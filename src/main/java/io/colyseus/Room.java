@@ -29,30 +29,57 @@ public class Room extends StateContainer {
             this.once = once;
         }
 
+        /**
+         * This event is triggered when the client leave the room.
+         */
         protected void onLeave() {
 
         }
 
+        /**
+         * This event is triggered when some error occurs in the room handler.
+         */
         protected void onError(Exception e) {
 
         }
 
+        /**
+         * This event is triggered when the server sends a message directly to the client.
+         */
         protected void onMessage(Object message) {
 
         }
 
+        /**
+         * This event is triggered when the client successfuly joins the room.
+         */
         protected void onJoin() {
 
         }
 
+        /**
+         * This event is triggered when the server updates its state.
+         */
         protected void onStateChange(LinkedHashMap<String, Object> state) {
 
         }
     }
 
     private LinkedHashMap<String, Object> options;
+
+    /**
+     * The unique identifier of the room.
+     */
     private String id;
+
+    /**
+     * Unique session identifier.
+     */
     private String sessionId;
+
+    /**
+     * Name of the room handler. Ex: "battle".
+     */
     private String name;
     private List<RoomListener> listeners = new ArrayList<>();
     private Connection connection;
@@ -233,12 +260,18 @@ public class Room extends StateContainer {
         listeners.removeAll(toRemove);
     }
 
+    /**
+     * Remove all event and data listeners.
+     */
     @Override
     public void removeAllListeners() {
         super.removeAllListeners();
         this.listeners.clear();
     }
 
+    /**
+     * Disconnect from the room.
+     */
     public void leave() {
         if (this.connection != null) {
             this.connection.send(Protocol.LEAVE_ROOM);
@@ -252,8 +285,11 @@ public class Room extends StateContainer {
         }
     }
 
+    /**
+     * Send message to the room handler.
+     */
     public void send(Object data) {
-        if(this.connection != null)
+        if (this.connection != null)
             this.connection.send(Protocol.ROOM_DATA, this.id, data);
         // room is created but not joined yet
         List<RoomListener> toRemove = new ArrayList<>();
@@ -269,7 +305,7 @@ public class Room extends StateContainer {
         return this.sessionId != null;
     }
 
-    protected void setState(byte[] encodedState) throws IOException {
+    private void setState(byte[] encodedState) throws IOException {
         this.set((LinkedHashMap<String, Object>) objectMapper.readValue(encodedState, Object.class));
         this._previousState = encodedState;
         List<RoomListener> toRemove = new ArrayList<>();
@@ -280,7 +316,7 @@ public class Room extends StateContainer {
         listeners.removeAll(toRemove);
     }
 
-    protected void patch(ArrayList<Integer> binaryPatch) throws Exception {
+    private void patch(ArrayList<Integer> binaryPatch) throws Exception {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         for (int i = 0; i < binaryPatch.size(); ++i) {
             baos.write(binaryPatch.get(i) & 0xFF);

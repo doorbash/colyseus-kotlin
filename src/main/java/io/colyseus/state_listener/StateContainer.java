@@ -8,6 +8,10 @@ import java.util.regex.Pattern;
 
 public class StateContainer {
 
+    /**
+     * The current room's state. This variable is always synced with the latest state from the server-side.
+     * To listen for updates on the whole state, see {@link io.colyseus.Room.RoomListener#onStateChange(LinkedHashMap)} event.
+     */
     public LinkedHashMap<String, Object> state;
     private List<PatchListener> _listeners;
     private FallbackPatchListener defaultListener;
@@ -45,7 +49,7 @@ public class StateContainer {
     public PatchListener addPatchListener(String segments, PatchListenerCallback callback) {
         String[] rawRules = segments.split("/");
         Pattern[] regexpRules = this.parseRegexRules(rawRules);
-        PatchListener listener = new PatchListener(callback,regexpRules,rawRules);
+        PatchListener listener = new PatchListener(callback, regexpRules, rawRules);
         this._listeners.add(listener);
         return listener;
     }
@@ -115,7 +119,7 @@ public class StateContainer {
         for (int i = 0; i < listener.rules.length; i++) {
             Matcher matcher = listener.rules[i].matcher(patch.path.get(i));
             List<String> matches = new ArrayList<>();
-            while(matcher.find()) {
+            while (matcher.find()) {
                 matches.add(matcher.group());
             }
             if (matches.size() == 0 || matches.size() > 2) {

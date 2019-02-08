@@ -20,17 +20,45 @@ import java.util.Map;
 
 public class Client {
 
+    /**
+     * Unique identifier for the client.
+     */
     private String id;
     private LinkedHashMap<String, String> httpHeaders;
     private int connectTimeout;
 
+    /**
+     * An interface for listening to client events
+     */
     public interface Listener {
+
+        /**
+         * This event is triggered when the connection is accepted by the server.
+         *
+         * @param id ColyseusId provided by the server
+         */
         void onOpen(String id);
 
+
+        /**
+         * This event is triggered when an unhandled message comes to client from server
+         *
+         * @param message The message from server
+         */
         void onMessage(Object message);
 
+        /**
+         * This event is triggered when the connection is closed.
+         *
+         * @param code   The codes can be looked up here: {@link "https://github.com/TooTallNate/Java-WebSocket/blob/fd4d55c2b62fa119d96f7178f47d92e3a9184de3/src/main/java/org/java_websocket/framing/CloseFrame.java"}
+         * @param reason Additional information
+         * @param remote Whether or not the closing of the connection was initiated by the remote host
+         */
         void onClose(int code, String reason, boolean remote);
 
+        /**
+         * This event is triggered when some error occurs in the server.
+         */
         void onError(Exception e);
     }
 
@@ -99,6 +127,9 @@ public class Client {
         return this.id;
     }
 
+    /**
+     * Joins roomName. roomName can be either a room name or a roomId
+     */
     public Room join(String roomName) {
         return this.createRoomRequest(roomName, null, null, 0, 0);
     }
@@ -111,6 +142,9 @@ public class Client {
         return this.createRoomRequest(roomName, options, null, retryTimes, 0);
     }
 
+    /**
+     * Reconnects the client into a room he was previously connected with.
+     */
     public Room rejoin(String roomName, String sessionId) {
         LinkedHashMap<String, Object> options = new LinkedHashMap<>();
         options.put("sessionId ", sessionId);
@@ -157,6 +191,9 @@ public class Client {
         return new Room(roomName, options);
     }
 
+    /**
+     * List all available rooms to connect with the provided roomName. Locked rooms won't be listed.
+     */
     public void getAvailableRooms(String roomName, final GetAvailableRoomsCallback callback) {
         // reject this promise after 10 seconds.
 
@@ -192,6 +229,9 @@ public class Client {
         });
     }
 
+    /**
+     * Close connection with the server.
+     */
     public void close() {
         this.connection.close();
     }
