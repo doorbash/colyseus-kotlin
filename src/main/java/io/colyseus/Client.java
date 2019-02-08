@@ -50,7 +50,7 @@ public class Client {
         /**
          * This event is triggered when the connection is closed.
          *
-         * @param code   The codes can be looked up here: {@link "https://github.com/TooTallNate/Java-WebSocket/blob/fd4d55c2b62fa119d96f7178f47d92e3a9184de3/src/main/java/org/java_websocket/framing/CloseFrame.java"}
+         * @param code   The codes can be looked up here: {@link org.java_websocket.framing.CloseFrame}
          * @param reason Additional information
          * @param remote Whether or not the closing of the connection was initiated by the remote host
          */
@@ -128,7 +128,9 @@ public class Client {
     }
 
     /**
-     * Joins roomName. roomName can be either a room name or a roomId
+     * Joins room
+     *
+     * @param roomName can be either a room name or a roomId
      */
     public Room join(String roomName) {
         return this.createRoomRequest(roomName, null, null, 0, 0);
