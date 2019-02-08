@@ -27,13 +27,13 @@ dependencies {
 ### Connecting to server:
 
 ```java
-Client client = new Client("ws://localhost:3000", new Client.Listener() {
+Client client = new Client("ws://localhost:2657", new Client.Listener() {
     @Override
     public void onOpen(String id) {
         System.out.println("Client.onOpen();");
         System.out.println("colyseus id: " + id);
         // You can store id on device and pass it to client next time:
-        // Client = new Client("ws://localhost:3000", id);
+        // Client = new Client("ws://localhost:2657", id);
     }
 
     @Override
@@ -58,7 +58,7 @@ Client client = new Client("ws://localhost:3000", new Client.Listener() {
 ### Joining to a room:
 
 ```java
-Room room = client.join("public");
+Room room = client.join("room_name");
 ```
 ### Listening to room events:
 
@@ -143,7 +143,7 @@ room.send(data);
 ### Getting available rooms list:
 
 ```java
-client.getAvailableRooms("public", new Client.GetAvailableRoomsCallback() {
+client.getAvailableRooms("room_name", new Client.GetAvailableRoomsCallback() {
     @Override
     public void onCallback(List<Client.AvailableRoom> availableRooms, String error) {
         if (error != null) System.out.println(error);
