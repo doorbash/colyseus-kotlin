@@ -10,7 +10,7 @@ Download [the latest JAR](https://github.com/doorbash/colyseus-java/releases/lat
 <dependency>
     <groupId>ir.doorbash</groupId>
     <artifactId>colyseus-java</artifactId>
-    <version>1.1.0</version>
+    <version>1.1.1</version>
     <type>pom</type>
 </dependency>
 ```
@@ -18,7 +18,7 @@ Download [the latest JAR](https://github.com/doorbash/colyseus-java/releases/lat
 Gradle: 
 ```groovy
 dependencies {
-    implementation 'ir.doorbash:colyseus-java:1.1.0'
+    implementation 'ir.doorbash:colyseus-java:1.1.1'
 }
 ```
 
@@ -70,7 +70,7 @@ room.addListener(new Room.Listener() {
     @Override
     protected void onError(Exception e) {
         System.out.println("Room.onError()");
-        System.out.println("exception: " + e.getMessage());
+        e.printStackTrace();
     }
 
     @Override
