@@ -17,15 +17,15 @@ import java.util.Map;
 
 public class Room extends StateContainer {
 
-    public abstract static class RoomListener {
+    public abstract static class Listener {
 
         boolean once = false;
 
-        protected RoomListener() {
+        protected Listener() {
 
         }
 
-        protected RoomListener(boolean once) {
+        protected Listener(boolean once) {
             this.once = once;
         }
 
@@ -81,7 +81,7 @@ public class Room extends StateContainer {
      * Name of the room handler. Ex: "battle".
      */
     private String name;
-    private List<RoomListener> listeners = new ArrayList<>();
+    private List<Listener> listeners = new ArrayList<>();
     private Connection connection;
     private byte[] _previousState;
     private ObjectMapper objectMapper;
@@ -130,11 +130,11 @@ public class Room extends StateContainer {
         this.objectMapper = new ObjectMapper(new MessagePackFactory());
     }
 
-    public void addListener(RoomListener listener) {
+    public void addListener(Listener listener) {
         this.listeners.add(listener);
     }
 
-    public void removeListener(RoomListener listener) {
+    public void removeListener(Listener listener) {
         this.listeners.remove(listener);
     }
 
@@ -143,9 +143,9 @@ public class Room extends StateContainer {
         this.connection = new Connection(new URI(endpoint), connectTimeout, httpHeaders, new Connection.Listener() {
             @Override
             public void onError(Exception e) {
-                System.err.println("Possible causes: room's onAuth() failed or maxClients has been reached.");
-                List<RoomListener> toRemove = new ArrayList<>();
-                for (RoomListener listener : listeners) {
+                //System.err.println("Possible causes: room's onAuth() failed or maxClients has been reached.");
+                List<Listener> toRemove = new ArrayList<>();
+                for (Listener listener : listeners) {
                     listener.onError(e);
                     if (listener.once) toRemove.add(listener);
                 }
@@ -154,13 +154,21 @@ public class Room extends StateContainer {
 
             @Override
             public void onClose(int code, String reason, boolean remote) {
-                removeAllListeners();
-                List<RoomListener> toRemove = new ArrayList<>();
-                for (RoomListener listener : listeners) {
+                if (code == 1002 && reason.equals("Invalid status code received: 401 Status line: HTTP/1.1 401 Unauthorized")) {
+                    List<Listener> toRemove = new ArrayList<>();
+                    for (Listener listener : listeners) {
+                        listener.onError(new Exception(reason));
+                        if (listener.once) toRemove.add(listener);
+                    }
+                    listeners.removeAll(toRemove);
+                }
+                List<Listener> toRemove = new ArrayList<>();
+                for (Listener listener : listeners) {
                     listener.onLeave();
                     if (listener.once) toRemove.add(listener);
                 }
                 listeners.removeAll(toRemove);
+                removeAllListeners();
             }
 
             @Override
@@ -188,8 +196,8 @@ public class Room extends StateContainer {
                     switch (code) {
                         case Protocol.JOIN_ROOM: {
                             sessionId = (String) messageArray.get(1);
-                            List<RoomListener> toRemove = new ArrayList<>();
-                            for (RoomListener listener : listeners) {
+                            List<Listener> toRemove = new ArrayList<>();
+                            for (Listener listener : listeners) {
                                 listener.onJoin();
                                 if (listener.once) toRemove.add(listener);
                             }
@@ -199,8 +207,8 @@ public class Room extends StateContainer {
 
                         case Protocol.JOIN_ERROR: {
                             System.err.println("Error: " + messageArray.get(1));
-                            List<RoomListener> toRemove = new ArrayList<>();
-                            for (RoomListener listener : listeners) {
+                            List<Listener> toRemove = new ArrayList<>();
+                            for (Listener listener : listeners) {
                                 listener.onError(new Exception(messageArray.get(1).toString()));
                                 if (listener.once) toRemove.add(listener);
                             }
@@ -221,8 +229,8 @@ public class Room extends StateContainer {
                         break;
 
                         case Protocol.ROOM_DATA: {
-                            List<RoomListener> toRemove = new ArrayList<>();
-                            for (RoomListener listener : listeners) {
+                            List<Listener> toRemove = new ArrayList<>();
+                            for (Listener listener : listeners) {
                                 listener.onMessage(messageArray.get(1));
                                 if (listener.once) toRemove.add(listener);
                             }
@@ -242,8 +250,8 @@ public class Room extends StateContainer {
             } else dispatchOnMessage(message);
         } catch (Exception e) {
             e.printStackTrace();
-            List<RoomListener> toRemove = new ArrayList<>();
-            for (RoomListener listener : listeners) {
+            List<Listener> toRemove = new ArrayList<>();
+            for (Listener listener : listeners) {
                 listener.onError(e);
                 if (listener.once) toRemove.add(listener);
             }
@@ -252,8 +260,8 @@ public class Room extends StateContainer {
     }
 
     private void dispatchOnMessage(Object message) {
-        List<RoomListener> toRemove = new ArrayList<>();
-        for (RoomListener listener : listeners) {
+        List<Listener> toRemove = new ArrayList<>();
+        for (Listener listener : listeners) {
             listener.onMessage(message);
             if (listener.once) toRemove.add(listener);
         }
@@ -276,8 +284,8 @@ public class Room extends StateContainer {
         if (this.connection != null) {
             this.connection.send(Protocol.LEAVE_ROOM);
         } else {
-            List<RoomListener> toRemove = new ArrayList<>();
-            for (RoomListener listener : listeners) {
+            List<Listener> toRemove = new ArrayList<>();
+            for (Listener listener : listeners) {
                 listener.onLeave();
                 if (listener.once) toRemove.add(listener);
             }
@@ -292,8 +300,8 @@ public class Room extends StateContainer {
         if (this.connection != null)
             this.connection.send(Protocol.ROOM_DATA, this.id, data);
         // room is created but not joined yet
-        List<RoomListener> toRemove = new ArrayList<>();
-        for (RoomListener listener : listeners) {
+        List<Listener> toRemove = new ArrayList<>();
+        for (Listener listener : listeners) {
             listener.onError(new Exception("send error: Room is created but not joined yet"));
             if (listener.once) toRemove.add(listener);
         }
@@ -308,8 +316,8 @@ public class Room extends StateContainer {
     private void setState(byte[] encodedState) throws IOException {
         this.set((LinkedHashMap<String, Object>) objectMapper.readValue(encodedState, Object.class));
         this._previousState = encodedState;
-        List<RoomListener> toRemove = new ArrayList<>();
-        for (RoomListener listener : listeners) {
+        List<Listener> toRemove = new ArrayList<>();
+        for (Listener listener : listeners) {
             listener.onStateChange(this.state);
             if (listener.once) toRemove.add(listener);
         }
@@ -323,8 +331,8 @@ public class Room extends StateContainer {
         }
         this._previousState = FossilDelta.apply(this._previousState, baos.toByteArray());
         this.set((LinkedHashMap<String, Object>) objectMapper.readValue(this._previousState, Object.class));
-        List<RoomListener> toRemove = new ArrayList<>();
-        for (RoomListener listener : listeners) {
+        List<Listener> toRemove = new ArrayList<>();
+        for (Listener listener : listeners) {
             listener.onStateChange(this.state);
             if (listener.once) toRemove.add(listener);
         }
