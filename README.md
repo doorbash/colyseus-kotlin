@@ -10,7 +10,7 @@ Download [the latest JAR](https://github.com/doorbash/colyseus-java/releases/lat
 <dependency>
     <groupId>ir.doorbash</groupId>
     <artifactId>colyseus-java</artifactId>
-    <version>1.0.9</version>
+    <version>1.1.0</version>
     <type>pom</type>
 </dependency>
 ```
@@ -18,7 +18,7 @@ Download [the latest JAR](https://github.com/doorbash/colyseus-java/releases/lat
 Gradle: 
 ```groovy
 dependencies {
-    implementation 'ir.doorbash:colyseus-java:1.0.9'
+    implementation 'ir.doorbash:colyseus-java:1.1.0'
 }
 ```
 
@@ -61,7 +61,7 @@ Room room = client.join("room_name");
 ### Listening to room events:
 
 ```java
-room.addListener(new Room.RoomListener() {
+room.addListener(new Room.Listener() {
     @Override
     protected void onLeave() {
         System.out.println("Room.onLeave()");
