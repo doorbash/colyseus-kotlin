@@ -1,5 +1,7 @@
 package io.colyseus.state_listener;
 
+import io.colyseus.Room;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -10,7 +12,7 @@ public class StateContainer {
 
     /**
      * The current room's state. This variable is always synced with the latest state from the server-side.
-     * To listen for updates on the whole state, see {@link io.colyseus.Room.RoomListener#onStateChange(LinkedHashMap)} event.
+     * To listen for updates on the whole state, see {@link Room.Listener#onStateChange(LinkedHashMap)} event.
      */
     public LinkedHashMap<String, Object> state;
     private List<PatchListener> _listeners;

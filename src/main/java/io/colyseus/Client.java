@@ -163,7 +163,7 @@ public class Client {
         final Room room = reuseRoomInstance == null ? this.createRoom(roomName, options) : reuseRoomInstance;
 
         final LinkedHashMap<String, Object> finalOptions = options;
-        room.addListener(new Room.RoomListener(true) {
+        room.addListener(new Room.Listener(true) {
             @Override
             public void onLeave() {
                 rooms.remove(room.getId());
@@ -172,7 +172,7 @@ public class Client {
         });
 
         if (retryTimes > 0) {
-            room.addListener(new Room.RoomListener(true) {
+            room.addListener(new Room.Listener(true) {
                 @Override
                 public void onError(Exception e) {
                     if (!room.hasJoined() && retryCount <= retryTimes) {
