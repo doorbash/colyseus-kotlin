@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.colyseus.fossil_delta.FossilDelta;
 import io.colyseus.state_listener.StateContainer;
+import org.java_websocket.framing.CloseFrame;
 import org.msgpack.jackson.dataformat.MessagePackFactory;
 
 import java.io.ByteArrayOutputStream;
@@ -154,7 +155,7 @@ public class Room extends StateContainer {
 
             @Override
             public void onClose(int code, String reason, boolean remote) {
-                if (code == 1002 && reason.equals("Invalid status code received: 401 Status line: HTTP/1.1 401 Unauthorized")) {
+                if (code == CloseFrame.PROTOCOL_ERROR && reason != null && reason.equals("Invalid status code received: 401 Status line: HTTP/1.1 401 Unauthorized")) {
                     List<Listener> toRemove = new ArrayList<>();
                     for (Listener listener : listeners) {
                         listener.onError(new Exception(reason));
