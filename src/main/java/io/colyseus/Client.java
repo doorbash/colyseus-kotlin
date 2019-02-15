@@ -89,8 +89,8 @@ public class Client {
     }
 
     private Connection connection;
-    private LinkedHashMap<String, Room> rooms = new LinkedHashMap<>();
-    private LinkedHashMap<Integer, Room> connectingRooms = new LinkedHashMap<>();
+    public LinkedHashMap<String, Room> rooms = new LinkedHashMap<>();
+    public LinkedHashMap<Integer, Room> connectingRooms = new LinkedHashMap<>();
     private int requestId = 0;
     private String hostname;
     private LinkedHashMap<Integer, AvailableRoomsRequestListener> availableRoomsRequests = new LinkedHashMap<>();
@@ -120,7 +120,7 @@ public class Client {
         this.connectTimeout = connectTimeout;
         this.listener = listener;
         this.objectMapper = new ObjectMapper(new MessagePackFactory());
-        this.connect(null, options == null ? new LinkedHashMap<String, Object>() : options, connectTimeout);
+        this.connect(options == null ? new LinkedHashMap<String, Object>() : options, connectTimeout);
     }
 
     public String getId() {
@@ -133,15 +133,11 @@ public class Client {
      * @param roomName can be either a room name or a roomId
      */
     public Room join(String roomName) {
-        return this.createRoomRequest(roomName, null, null, 0, 0);
+        return this.createRoomRequest(roomName, null);
     }
 
     public Room join(String roomName, LinkedHashMap<String, Object> options) {
-        return this.createRoomRequest(roomName, options, null, 0, 0);
-    }
-
-    public Room join(String roomName, LinkedHashMap<String, Object> options, int retryTimes) {
-        return this.createRoomRequest(roomName, options, null, retryTimes, 0);
+        return this.createRoomRequest(roomName, options);
     }
 
     /**
@@ -153,34 +149,21 @@ public class Client {
         return this.join(roomName, options);
     }
 
-    private Room createRoomRequest(final String roomName, LinkedHashMap<String, Object> options, Room reuseRoomInstance, final int retryTimes, final int retryCount) {
+    private Room createRoomRequest(final String roomName, LinkedHashMap<String, Object> options) {
 //        System.out.println("createRoomRequest(" + roomName + "," + options + "," + reuseRoomInstance + "," + retryTimes + "," + retryCount);
         if (options == null) options = new LinkedHashMap<>();
         options.put("requestId", ++this.requestId);
 
-        if (retryTimes > 0) options.put("retryTimes", retryTimes); // ?
-
-        final Room room = reuseRoomInstance == null ? this.createRoom(roomName, options) : reuseRoomInstance;
+        final Room room = createRoom(roomName, options);
 
         final LinkedHashMap<String, Object> finalOptions = options;
-        room.addListener(new Room.Listener(true) {
+        room.addListener(new Room.Listener() {
             @Override
             public void onLeave() {
                 rooms.remove(room.getId());
                 connectingRooms.remove(finalOptions.get("requestId"));
             }
         });
-
-        if (retryTimes > 0) {
-            room.addListener(new Room.Listener(true) {
-                @Override
-                public void onError(Exception e) {
-                    if (!room.hasJoined() && retryCount <= retryTimes) {
-                        createRoomRequest(roomName, finalOptions, room, retryTimes, retryCount + 1);
-                    }
-                }
-            });
-        }
 
         this.connectingRooms.put((int) options.get("requestId"), room);
 
@@ -208,8 +191,7 @@ public class Client {
             public void run() {
                 try {
                     Thread.sleep(10000);
-                    if (!availableRoomsRequests.containsKey(requestIdFinal)) {
-                    } else {
+                    if (availableRoomsRequests.containsKey(requestIdFinal)) {
                         availableRoomsRequests.remove(requestIdFinal);
                         callback.onCallback(null, "timeout");
                     }
@@ -222,7 +204,7 @@ public class Client {
         // send the request to the server.
         this.connection.send(Protocol.ROOM_LIST, requestIdFinal, roomName);
 
-        availableRoomsRequests.put(requestId, new AvailableRoomsRequestListener() {
+        availableRoomsRequests.put(requestIdFinal, new AvailableRoomsRequestListener() {
             @Override
             public void callback(List<AvailableRoom> availableRooms) {
                 availableRoomsRequests.remove(requestIdFinal);
@@ -238,8 +220,7 @@ public class Client {
         this.connection.close();
     }
 
-    private void connect(String colyseusid, LinkedHashMap<String, Object> options, int connectTimeout) {
-        if (colyseusid != null) this.id = colyseusid;
+    private void connect(LinkedHashMap<String, Object> options, int connectTimeout) {
         URI uri;
         try {
             uri = new URI(buildEndpoint("", options));

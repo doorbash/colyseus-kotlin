@@ -20,14 +20,8 @@ public class Room extends StateContainer {
 
     public abstract static class Listener {
 
-        boolean once = false;
-
         protected Listener() {
 
-        }
-
-        protected Listener(boolean once) {
-            this.once = once;
         }
 
         /**
@@ -145,30 +139,21 @@ public class Room extends StateContainer {
             @Override
             public void onError(Exception e) {
                 //System.err.println("Possible causes: room's onAuth() failed or maxClients has been reached.");
-                List<Listener> toRemove = new ArrayList<>();
                 for (Listener listener : listeners) {
                     listener.onError(e);
-                    if (listener.once) toRemove.add(listener);
                 }
-                listeners.removeAll(toRemove);
             }
 
             @Override
             public void onClose(int code, String reason, boolean remote) {
                 if (code == CloseFrame.PROTOCOL_ERROR && reason != null && reason.equals("Invalid status code received: 401 Status line: HTTP/1.1 401 Unauthorized")) {
-                    List<Listener> toRemove = new ArrayList<>();
                     for (Listener listener : listeners) {
                         listener.onError(new Exception(reason));
-                        if (listener.once) toRemove.add(listener);
                     }
-                    listeners.removeAll(toRemove);
                 }
-                List<Listener> toRemove = new ArrayList<>();
                 for (Listener listener : listeners) {
                     listener.onLeave();
-                    if (listener.once) toRemove.add(listener);
                 }
-                listeners.removeAll(toRemove);
                 removeAllListeners();
             }
 
@@ -185,7 +170,7 @@ public class Room extends StateContainer {
     }
 
 
-    public void onMessageCallback(byte[] bytes) {
+    private void onMessageCallback(byte[] bytes) {
 //        System.out.println("Room.onMessageCallback()");
         try {
             Object message = objectMapper.readValue(bytes, new TypeReference<Object>() {
@@ -197,23 +182,17 @@ public class Room extends StateContainer {
                     switch (code) {
                         case Protocol.JOIN_ROOM: {
                             sessionId = (String) messageArray.get(1);
-                            List<Listener> toRemove = new ArrayList<>();
                             for (Listener listener : listeners) {
                                 listener.onJoin();
-                                if (listener.once) toRemove.add(listener);
                             }
-                            listeners.removeAll(toRemove);
                         }
                         break;
 
                         case Protocol.JOIN_ERROR: {
                             System.err.println("Error: " + messageArray.get(1));
-                            List<Listener> toRemove = new ArrayList<>();
                             for (Listener listener : listeners) {
                                 listener.onError(new Exception(messageArray.get(1).toString()));
-                                if (listener.once) toRemove.add(listener);
                             }
-                            listeners.removeAll(toRemove);
                         }
                         break;
 
@@ -230,12 +209,9 @@ public class Room extends StateContainer {
                         break;
 
                         case Protocol.ROOM_DATA: {
-                            List<Listener> toRemove = new ArrayList<>();
                             for (Listener listener : listeners) {
                                 listener.onMessage(messageArray.get(1));
-                                if (listener.once) toRemove.add(listener);
                             }
-                            listeners.removeAll(toRemove);
                         }
                         break;
 
@@ -251,22 +227,16 @@ public class Room extends StateContainer {
             } else dispatchOnMessage(message);
         } catch (Exception e) {
             e.printStackTrace();
-            List<Listener> toRemove = new ArrayList<>();
             for (Listener listener : listeners) {
                 listener.onError(e);
-                if (listener.once) toRemove.add(listener);
             }
-            listeners.removeAll(toRemove);
         }
     }
 
     private void dispatchOnMessage(Object message) {
-        List<Listener> toRemove = new ArrayList<>();
         for (Listener listener : listeners) {
             listener.onMessage(message);
-            if (listener.once) toRemove.add(listener);
         }
-        listeners.removeAll(toRemove);
     }
 
     /**
@@ -285,12 +255,9 @@ public class Room extends StateContainer {
         if (this.connection != null) {
             this.connection.send(Protocol.LEAVE_ROOM);
         } else {
-            List<Listener> toRemove = new ArrayList<>();
             for (Listener listener : listeners) {
                 listener.onLeave();
-                if (listener.once) toRemove.add(listener);
             }
-            listeners.removeAll(toRemove);
         }
     }
 
@@ -301,12 +268,9 @@ public class Room extends StateContainer {
         if (this.connection != null)
             this.connection.send(Protocol.ROOM_DATA, this.id, data);
         // room is created but not joined yet
-        List<Listener> toRemove = new ArrayList<>();
         for (Listener listener : listeners) {
             listener.onError(new Exception("send error: Room is created but not joined yet"));
-            if (listener.once) toRemove.add(listener);
         }
-        listeners.removeAll(toRemove);
     }
 
 
@@ -317,26 +281,20 @@ public class Room extends StateContainer {
     private void setState(byte[] encodedState) throws IOException {
         this.set((LinkedHashMap<String, Object>) objectMapper.readValue(encodedState, Object.class));
         this._previousState = encodedState;
-        List<Listener> toRemove = new ArrayList<>();
         for (Listener listener : listeners) {
             listener.onStateChange(this.state);
-            if (listener.once) toRemove.add(listener);
         }
-        listeners.removeAll(toRemove);
     }
 
     private void patch(ArrayList<Integer> binaryPatch) throws Exception {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        for (int i = 0; i < binaryPatch.size(); ++i) {
-            baos.write(binaryPatch.get(i) & 0xFF);
+        for (Integer i : binaryPatch) {
+            baos.write(i & 0xFF);
         }
         this._previousState = FossilDelta.apply(this._previousState, baos.toByteArray());
         this.set((LinkedHashMap<String, Object>) objectMapper.readValue(this._previousState, Object.class));
-        List<Listener> toRemove = new ArrayList<>();
         for (Listener listener : listeners) {
             listener.onStateChange(this.state);
-            if (listener.once) toRemove.add(listener);
         }
-        listeners.removeAll(toRemove);
     }
 }
