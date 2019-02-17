@@ -25,21 +25,21 @@ public class Connection extends WebSocketClient {
 
     private LinkedList<Object[]> _enqueuedCalls = new LinkedList<>();
     private Listener listener;
-    private ObjectMapper mapper;
+    private ObjectMapper msgpackMapper;
 
     Connection(URI uri, int connectTimeout, Map<String, String> httpHeaders, Listener listener) {
         super(uri, new Draft_6455(), httpHeaders, connectTimeout);
 //        System.out.println("Connection()");
-//        System.out.println("url is " + url);
+//        System.out.println("url is " + uri);
         this.listener = listener;
-        this.mapper = new ObjectMapper(new MessagePackFactory());
+        this.msgpackMapper = new ObjectMapper(new MessagePackFactory());
         connect();
     }
 
     void send(Object... data) {
         if (isOpen()) {
             try {
-                send(mapper.writeValueAsBytes(data));
+                send(msgpackMapper.writeValueAsBytes(data));
             } catch (Exception e) {
                 onError(e);
             }

@@ -10,7 +10,7 @@ Download [the latest JAR](https://github.com/doorbash/colyseus-java/releases/lat
 <dependency>
     <groupId>ir.doorbash</groupId>
     <artifactId>colyseus-java</artifactId>
-    <version>1.1.1</version>
+    <version>1.2</version>
     <type>pom</type>
 </dependency>
 ```
@@ -18,7 +18,7 @@ Download [the latest JAR](https://github.com/doorbash/colyseus-java/releases/lat
 Gradle: 
 ```groovy
 dependencies {
-    implementation 'ir.doorbash:colyseus-java:1.1.1'
+    implementation 'ir.doorbash:colyseus-java:1.2'
 }
 ```
 
@@ -27,7 +27,7 @@ dependencies {
 ### Connecting to server:
 
 ```java
-Client client = new Client("ws://localhost:2657", new Client.Listener() {
+Client client = new Client("ws://localhost:2567", new Client.Listener() {
     @Override
     public void onOpen(String id) {
         System.out.println("Client.onOpen();");
