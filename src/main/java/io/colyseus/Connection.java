@@ -88,4 +88,8 @@ public class Connection extends WebSocketClient {
             Connection.this.listener.onMessage(bytes);
         }
     }
+
+    public void setListener(Listener listener){
+        this.listener = listener;
+    }
 }

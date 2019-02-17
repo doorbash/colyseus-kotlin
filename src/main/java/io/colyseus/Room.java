@@ -146,7 +146,7 @@ public class Room extends StateContainer {
 
             @Override
             public void onClose(int code, String reason, boolean remote) {
-                if (code == CloseFrame.PROTOCOL_ERROR && reason != null && reason.equals("Invalid status code received: 401 Status line: HTTP/1.1 401 Unauthorized")) {
+                if (code == CloseFrame.PROTOCOL_ERROR && reason != null && reason.toLowerCase().contains("401 Unauthorized".toLowerCase())) {
                     for (Listener listener : listeners) {
                         listener.onError(new Exception(reason));
                     }

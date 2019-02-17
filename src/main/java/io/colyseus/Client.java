@@ -26,6 +26,7 @@ public class Client {
     private String id;
     private LinkedHashMap<String, String> httpHeaders;
     private int connectTimeout;
+    private LinkedHashMap<String, Object> options;
 
     /**
      * An interface for listening to client events
@@ -120,7 +121,7 @@ public class Client {
         this.connectTimeout = connectTimeout;
         this.listener = listener;
         this.objectMapper = new ObjectMapper(new MessagePackFactory());
-        this.connect(options == null ? new LinkedHashMap<String, Object>() : options, connectTimeout);
+        this.options = options == null ? new LinkedHashMap<String, Object>() : options;
     }
 
     public String getId() {
@@ -217,10 +218,31 @@ public class Client {
      * Close connection with the server.
      */
     public void close() {
-        this.connection.close();
+        if(this.connection != null) {
+            this.connection.close();
+        }
+    }
+
+    public void close(boolean leaveRooms) {
+        if(leaveRooms){
+            for (Map.Entry<String, Room> entry : this.rooms.entrySet()){
+               entry.getValue().leave();
+            }
+            this.rooms.clear();
+            this.connectingRooms.clear();
+        }
+        close();
+    }
+
+    public void connect(){
+        connect(options, connectTimeout);
     }
 
     private void connect(LinkedHashMap<String, Object> options, int connectTimeout) {
+        if(connection != null){
+            connection.setListener(null);
+            connection.close();
+        }
         URI uri;
         try {
             uri = new URI(buildEndpoint("", options));
@@ -370,5 +392,9 @@ public class Client {
         if (Client.this.listener != null)
             Client.this.listener.onMessage(objectMapper.readValue(bytes, new TypeReference<Object>() {
             }));
+    }
+
+    public void setListener(Listener listener){
+        this.listener = listener;
     }
 }
