@@ -1,5 +1,6 @@
 package io.colyseus;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.msgpack.core.MessagePack;
@@ -11,8 +12,11 @@ import org.msgpack.value.Value;
 import org.msgpack.value.ValueType;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -95,7 +99,8 @@ public class Client {
     private String hostname;
     private LinkedHashMap<Integer, AvailableRoomsRequestListener> availableRoomsRequests = new LinkedHashMap<>();
     private Listener listener;
-    private ObjectMapper objectMapper;
+    private ObjectMapper msgpackMapper;
+    private ObjectMapper defaultMapper;
 
     public Client(String url) {
         this(url, null, null, null, 0, null);
@@ -119,7 +124,8 @@ public class Client {
         this.httpHeaders = httpHeaders == null ? new LinkedHashMap<String, String>() : httpHeaders;
         this.connectTimeout = connectTimeout;
         this.listener = listener;
-        this.objectMapper = new ObjectMapper(new MessagePackFactory());
+        this.defaultMapper = new ObjectMapper();
+        this.msgpackMapper = new ObjectMapper(new MessagePackFactory());
         this.connect(options == null ? new LinkedHashMap<String, Object>() : options, connectTimeout);
     }
 
@@ -195,8 +201,8 @@ public class Client {
                         availableRoomsRequests.remove(requestIdFinal);
                         callback.onCallback(null, "timeout");
                     }
-                } catch (Exception e) {
-                    System.err.println(e);
+                } catch (Exception ignored) {
+
                 }
             }
         });
@@ -224,7 +230,7 @@ public class Client {
         URI uri;
         try {
             uri = new URI(buildEndpoint("", options));
-        } catch (URISyntaxException e) {
+        } catch (URISyntaxException | UnsupportedEncodingException | JsonProcessingException e) {
             if (Client.this.listener != null)
                 Client.this.listener.onError(e);
             return;
@@ -255,18 +261,16 @@ public class Client {
         });
     }
 
-    private String buildEndpoint(String path, LinkedHashMap<String, Object> options) {
+    private String buildEndpoint(String path, LinkedHashMap<String, Object> options) throws UnsupportedEncodingException, JsonProcessingException {
         // append colyseusid to connection string.
-        List<String> params = new ArrayList<>();
-        for (String name : options.keySet()) {
-            params.add(name + "=" + options.get(name).toString());
-        }
         StringBuilder sb = new StringBuilder();
-        for (String s : params) {
+        for (String name : options.keySet()) {
             sb.append("&");
-            sb.append(s);
+            sb.append(URLEncoder.encode(name, StandardCharsets.UTF_8.name()));
+            sb.append("=");
+            sb.append(URLEncoder.encode(defaultMapper.writeValueAsString(options.get(name)), StandardCharsets.UTF_8.name()));
         }
-        return this.hostname + "/" + path + "?colyseusid=" + (this.id == null ? "" : this.id) + sb.toString();
+        return this.hostname + "/" + path + "?colyseusid=" + URLEncoder.encode(this.id == null ? "" : this.id, StandardCharsets.UTF_8.name()) + sb.toString();
     }
 
     private void onMessageCallback(byte[] bytes) {
@@ -307,7 +311,7 @@ public class Client {
                         break;
                         case Protocol.JOIN_ERROR: {
 //                            System.out.println("Protocol: JOIN_ERROR");
-                            System.err.println("colyseus: server error: + " + arrayValue.get(2).toString());
+                            System.err.println("colyseus: server error: " + arrayValue.get(2).toString());
                             // general error
                             if (this.listener != null)
                                 this.listener.onError(new Exception(arrayValue.get(2).toString()));
@@ -361,14 +365,13 @@ public class Client {
                 dispatchOnMessage(bytes);
             }
         } catch (Exception e) {
-            e.printStackTrace();
             if (this.listener != null) this.listener.onError(e);
         }
     }
 
     private void dispatchOnMessage(byte[] bytes) throws IOException {
         if (Client.this.listener != null)
-            Client.this.listener.onMessage(objectMapper.readValue(bytes, new TypeReference<Object>() {
+            Client.this.listener.onMessage(msgpackMapper.readValue(bytes, new TypeReference<Object>() {
             }));
     }
 }
