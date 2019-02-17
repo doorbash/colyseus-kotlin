@@ -79,7 +79,7 @@ public class Room extends StateContainer {
     private List<Listener> listeners = new ArrayList<>();
     private Connection connection;
     private byte[] _previousState;
-    private ObjectMapper objectMapper;
+    private ObjectMapper msgpackMapper;
 
     public String getName() {
         return name;
@@ -122,7 +122,7 @@ public class Room extends StateContainer {
 //        System.out.println("Room created: name: " + roomName + ", options: " + options);
         this.name = roomName;
         this.options = options;
-        this.objectMapper = new ObjectMapper(new MessagePackFactory());
+        this.msgpackMapper = new ObjectMapper(new MessagePackFactory());
     }
 
     public void addListener(Listener listener) {
@@ -146,7 +146,7 @@ public class Room extends StateContainer {
 
             @Override
             public void onClose(int code, String reason, boolean remote) {
-                if (code == CloseFrame.PROTOCOL_ERROR && reason != null && reason.equals("Invalid status code received: 401 Status line: HTTP/1.1 401 Unauthorized")) {
+                if (code == CloseFrame.PROTOCOL_ERROR && reason != null && reason.startsWith("Invalid status code received: 401")) {
                     for (Listener listener : listeners) {
                         listener.onError(new Exception(reason));
                     }
@@ -173,7 +173,7 @@ public class Room extends StateContainer {
     private void onMessageCallback(byte[] bytes) {
 //        System.out.println("Room.onMessageCallback()");
         try {
-            Object message = objectMapper.readValue(bytes, new TypeReference<Object>() {
+            Object message = msgpackMapper.readValue(bytes, new TypeReference<Object>() {
             });
             if (message instanceof List) {
                 List<Object> messageArray = (List<Object>) message;
@@ -226,7 +226,6 @@ public class Room extends StateContainer {
                 } else dispatchOnMessage(message);
             } else dispatchOnMessage(message);
         } catch (Exception e) {
-            e.printStackTrace();
             for (Listener listener : listeners) {
                 listener.onError(e);
             }
@@ -279,7 +278,7 @@ public class Room extends StateContainer {
     }
 
     private void setState(byte[] encodedState) throws IOException {
-        this.set((LinkedHashMap<String, Object>) objectMapper.readValue(encodedState, Object.class));
+        this.set((LinkedHashMap<String, Object>) msgpackMapper.readValue(encodedState, Object.class));
         this._previousState = encodedState;
         for (Listener listener : listeners) {
             listener.onStateChange(this.state);
@@ -292,7 +291,7 @@ public class Room extends StateContainer {
             baos.write(i & 0xFF);
         }
         this._previousState = FossilDelta.apply(this._previousState, baos.toByteArray());
-        this.set((LinkedHashMap<String, Object>) objectMapper.readValue(this._previousState, Object.class));
+        this.set((LinkedHashMap<String, Object>) msgpackMapper.readValue(this._previousState, Object.class));
         for (Listener listener : listeners) {
             listener.onStateChange(this.state);
         }
