@@ -105,7 +105,7 @@ public class Room extends StateContainer {
         this.id = id;
     }
 
-    LinkedHashMap<String, Object> getOptions() {
+    public LinkedHashMap<String, Object> getOptions() {
         return options;
     }
 
