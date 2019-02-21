@@ -33,6 +33,8 @@ public class Room extends StateContainer {
 
         /**
          * This event is triggered when some error occurs in the room handler.
+         *
+         * @param e error exception object
          */
         protected void onError(Exception e) {
 
@@ -40,6 +42,8 @@ public class Room extends StateContainer {
 
         /**
          * This event is triggered when the server sends a message directly to the client.
+         *
+         * @param message message
          */
         protected void onMessage(Object message) {
 
@@ -54,6 +58,8 @@ public class Room extends StateContainer {
 
         /**
          * This event is triggered when the server updates its state.
+         *
+         * @param state state object
          */
         protected void onStateChange(LinkedHashMap<String, Object> state) {
 
@@ -262,6 +268,8 @@ public class Room extends StateContainer {
 
     /**
      * Send message to the room handler.
+     *
+     * @param data object
      */
     public void send(Object data) {
         if (this.connection != null)

@@ -63,6 +63,8 @@ public class Client {
 
         /**
          * This event is triggered when some error occurs in the server.
+         *
+         * @param e error exception object
          */
         void onError(Exception e);
     }
@@ -138,6 +140,7 @@ public class Client {
      * Joins room
      *
      * @param roomName can be either a room name or a roomId
+     * @return joined Room object
      */
     public Room join(String roomName) {
         return this.createRoomRequest(roomName, null);
@@ -149,6 +152,10 @@ public class Client {
 
     /**
      * Reconnects the client into a room he was previously connected with.
+     *
+     * @param roomName room name
+     * @param sessionId  session id
+     * @return rejoined Room object
      */
     public Room rejoin(String roomName, String sessionId) {
         LinkedHashMap<String, Object> options = new LinkedHashMap<>();
@@ -185,6 +192,9 @@ public class Client {
 
     /**
      * List all available rooms to connect with the provided roomName. Locked rooms won't be listed.
+     *
+     * @param roomName room name
+     * @param callback room callback
      */
     public void getAvailableRooms(String roomName, final GetAvailableRoomsCallback callback) {
         // reject this promise after 10 seconds.
