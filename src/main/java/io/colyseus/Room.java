@@ -146,7 +146,7 @@ public class Room extends StateContainer {
             public void onError(Exception e) {
                 //System.err.println("Possible causes: room's onAuth() failed or maxClients has been reached.");
                 for (Listener listener : listeners) {
-                    listener.onError(e);
+                    if(listener != null) listener.onError(e);
                 }
             }
 
@@ -154,11 +154,11 @@ public class Room extends StateContainer {
             public void onClose(int code, String reason, boolean remote) {
                 if (code == CloseFrame.PROTOCOL_ERROR && reason != null && reason.toLowerCase().contains("401 Unauthorized".toLowerCase())) {
                     for (Listener listener : listeners) {
-                        listener.onError(new Exception(reason));
+                        if(listener != null) listener.onError(new Exception(reason));
                     }
                 }
                 for (Listener listener : listeners) {
-                    listener.onLeave();
+                    if(listener != null) listener.onLeave();
                 }
                 removeAllListeners();
             }
@@ -189,7 +189,7 @@ public class Room extends StateContainer {
                         case Protocol.JOIN_ROOM: {
                             sessionId = (String) messageArray.get(1);
                             for (Listener listener : listeners) {
-                                listener.onJoin();
+                                if(listener != null) listener.onJoin();
                             }
                         }
                         break;
@@ -197,7 +197,7 @@ public class Room extends StateContainer {
                         case Protocol.JOIN_ERROR: {
                             System.err.println("Error: " + messageArray.get(1));
                             for (Listener listener : listeners) {
-                                listener.onError(new Exception(messageArray.get(1).toString()));
+                                if(listener != null) listener.onError(new Exception(messageArray.get(1).toString()));
                             }
                         }
                         break;
@@ -216,7 +216,7 @@ public class Room extends StateContainer {
 
                         case Protocol.ROOM_DATA: {
                             for (Listener listener : listeners) {
-                                listener.onMessage(messageArray.get(1));
+                                if(listener != null) listener.onMessage(messageArray.get(1));
                             }
                         }
                         break;
@@ -233,14 +233,14 @@ public class Room extends StateContainer {
             } else dispatchOnMessage(message);
         } catch (Exception e) {
             for (Listener listener : listeners) {
-                listener.onError(e);
+                if(listener != null) listener.onError(e);
             }
         }
     }
 
     private void dispatchOnMessage(Object message) {
         for (Listener listener : listeners) {
-            listener.onMessage(message);
+            if(listener != null) listener.onMessage(message);
         }
     }
 
@@ -261,7 +261,7 @@ public class Room extends StateContainer {
             this.connection.send(Protocol.LEAVE_ROOM);
         } else {
             for (Listener listener : listeners) {
-                listener.onLeave();
+                if(listener != null) listener.onLeave();
             }
         }
     }
@@ -274,9 +274,11 @@ public class Room extends StateContainer {
     public void send(Object data) {
         if (this.connection != null)
             this.connection.send(Protocol.ROOM_DATA, this.id, data);
-        // room is created but not joined yet
-        for (Listener listener : listeners) {
-            listener.onError(new Exception("send error: Room is created but not joined yet"));
+        else {
+            // room is created but not joined yet
+            for (Listener listener : listeners) {
+                if(listener != null) listener.onError(new Exception("send error: Room is created but not joined yet"));
+            }
         }
     }
 
@@ -289,7 +291,7 @@ public class Room extends StateContainer {
         this.set((LinkedHashMap<String, Object>) msgpackMapper.readValue(encodedState, Object.class));
         this._previousState = encodedState;
         for (Listener listener : listeners) {
-            listener.onStateChange(this.state);
+            if(listener != null) listener.onStateChange(this.state);
         }
     }
 
@@ -301,7 +303,7 @@ public class Room extends StateContainer {
         this._previousState = FossilDelta.apply(this._previousState, baos.toByteArray());
         this.set((LinkedHashMap<String, Object>) msgpackMapper.readValue(this._previousState, Object.class));
         for (Listener listener : listeners) {
-            listener.onStateChange(this.state);
+            if(listener != null) listener.onStateChange(this.state);
         }
     }
 }
