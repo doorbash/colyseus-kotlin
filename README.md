@@ -151,9 +151,19 @@ client.getAvailableRooms("room_name", new Client.GetAvailableRoomsCallback() {
 ```
 
 
-### Usage examples
+## Usage examples
 
 - [Agar.io-Clone](https://github.com/doorbash/agar.io-clone) - Simple agar.io game clone using [libgdx](https://libgdx.badlogicgames.com/)
+
+## ProGuard
+Use the following rules in your ProGuard configuration file `proguard-rules.pro`
+
+```pro
+# Colyseus-Java
+-keep class com.fasterxml.** { *; }
+-dontwarn com.fasterxml.jackson.databind.**
+-keep class org.msgpack.** { *; }
+```
 
 ## License
 
