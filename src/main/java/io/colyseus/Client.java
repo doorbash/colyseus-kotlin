@@ -263,14 +263,19 @@ public class Client {
 
     private String buildEndpoint(String path, LinkedHashMap<String, Object> options) throws UnsupportedEncodingException, JsonProcessingException {
         // append colyseusid to connection string.
+        String charset = "UTF-8";
+        try {
+            charset = StandardCharsets.UTF_8.name();
+        } catch (NoClassDefFoundError ignored) {
+        }
         StringBuilder sb = new StringBuilder();
         for (String name : options.keySet()) {
             sb.append("&");
-            sb.append(URLEncoder.encode(name, StandardCharsets.UTF_8.name()));
+            sb.append(URLEncoder.encode(name, charset));
             sb.append("=");
-            sb.append(URLEncoder.encode(defaultMapper.writeValueAsString(options.get(name)), StandardCharsets.UTF_8.name()));
+            sb.append(URLEncoder.encode(defaultMapper.writeValueAsString(options.get(name)), charset));
         }
-        return this.hostname + "/" + path + "?colyseusid=" + URLEncoder.encode(this.id == null ? "" : this.id, StandardCharsets.UTF_8.name()) + sb.toString();
+        return this.hostname + "/" + path + "?colyseusid=" + URLEncoder.encode(this.id == null ? "" : this.id, charset) + sb.toString();
     }
 
     private void onMessageCallback(byte[] bytes) {
