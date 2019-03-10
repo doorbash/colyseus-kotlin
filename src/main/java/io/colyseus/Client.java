@@ -151,7 +151,7 @@ public class Client {
      */
     public Room rejoin(String roomName, String sessionId) {
         LinkedHashMap<String, Object> options = new LinkedHashMap<>();
-        options.put("sessionId ", sessionId);
+        options.put("sessionId", sessionId);
         return this.join(roomName, options);
     }
 
