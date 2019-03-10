@@ -10,7 +10,7 @@ Download [the latest JAR](https://github.com/doorbash/colyseus-java/releases/lat
 <dependency>
     <groupId>ir.doorbash</groupId>
     <artifactId>colyseus-java</artifactId>
-    <version>1.2.1</version>
+    <version>1.2.3</version>
     <type>pom</type>
 </dependency>
 ```
@@ -18,7 +18,7 @@ Download [the latest JAR](https://github.com/doorbash/colyseus-java/releases/lat
 Gradle: 
 ```groovy
 dependencies {
-    implementation 'ir.doorbash:colyseus-java:1.2.1'
+    implementation 'ir.doorbash:colyseus-java:1.2.3'
 }
 ```
 
@@ -151,9 +151,19 @@ client.getAvailableRooms("room_name", new Client.GetAvailableRoomsCallback() {
 ```
 
 
-### Usage examples
+## Usage examples
 
 - [Agar.io-Clone](https://github.com/doorbash/agar.io-clone) - Simple agar.io game clone using [libgdx](https://libgdx.badlogicgames.com/)
+
+## ProGuard
+Use the following rules in your ProGuard configuration file `proguard-rules.pro`
+
+```pro
+# Colyseus-Java
+-keep class com.fasterxml.** { *; }
+-dontwarn com.fasterxml.jackson.databind.**
+-keep class org.msgpack.** { *; }
+```
 
 ## License
 

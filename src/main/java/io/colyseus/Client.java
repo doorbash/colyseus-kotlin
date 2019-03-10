@@ -159,7 +159,7 @@ public class Client {
      */
     public Room rejoin(String roomName, String sessionId) {
         LinkedHashMap<String, Object> options = new LinkedHashMap<>();
-        options.put("sessionId ", sessionId);
+        options.put("sessionId", sessionId);
         return this.join(roomName, options);
     }
 
@@ -298,8 +298,8 @@ public class Client {
         String charset = "UTF-8";
         try {
             charset = StandardCharsets.UTF_8.name();
-        }catch (NoClassDefFoundError e){
-            e.printStackTrace();
+        } catch (NoClassDefFoundError ignored) {
+
         }
         StringBuilder sb = new StringBuilder();
         for (String name : options.keySet()) {
