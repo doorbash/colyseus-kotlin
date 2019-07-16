@@ -15,9 +15,9 @@ plugins {
 apply plugin: 'com.novoda.bintray-release'
 
 group 'ir.doorbash'
-version '1.2.3'
+version '2.0.0'
 
-sourceCompatibility = 1.7
+sourceCompatibility = 1.8
 
 repositories {
     mavenCentral()
@@ -25,15 +25,14 @@ repositories {
 
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.9.8'
-    implementation 'org.java-websocket:Java-WebSocket:1.3.9'
-    implementation 'org.msgpack:jackson-dataformat-msgpack:0.8.16'
+    implementation 'org.java-websocket:Java-WebSocket:1.4.0'
+    implementation 'org.msgpack:jackson-dataformat-msgpack:0.8.17'
 }
 
 publish {
     def groupProjectID = 'ir.doorbash'
     def artifactProjectID = 'colyseus-java'
-    def publishVersionID = '1.2.3'
+    def publishVersionID = '2.0.0'
     userOrg = 'doorbash'
     repoName = 'ColyseusJavaClient'
     groupId = groupProjectID
@@ -41,4 +40,12 @@ publish {
     publishVersion = publishVersionID
     desc = 'Colyseus Client for Java'
     website = 'https://github.com/doorbash/colyseus-java'
+}
+
+task run(dependsOn: classes, type: JavaExec) {
+    main = "Main"
+    classpath = sourceSets.main.runtimeClasspath
+    standardInput = System.in
+    workingDir = new File(".")
+    ignoreExitValue = true
 }

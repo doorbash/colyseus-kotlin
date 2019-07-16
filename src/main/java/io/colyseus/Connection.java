@@ -20,7 +20,7 @@ public class Connection extends WebSocketClient {
 
         void onOpen();
 
-        void onMessage(byte[] bytes);
+        void onMessage(ByteBuffer bytes);
     }
 
     private LinkedList<Object[]> _enqueuedCalls = new LinkedList<>();
@@ -29,8 +29,8 @@ public class Connection extends WebSocketClient {
 
     Connection(URI uri, int connectTimeout, Map<String, String> httpHeaders, Listener listener) {
         super(uri, new Draft_6455(), httpHeaders, connectTimeout);
-//        System.out.println("Connection()");
-//        System.out.println("url is " + uri);
+        System.out.println("Connection()");
+        System.out.println("url is " + uri);
         this.listener = listener;
         this.msgpackMapper = new ObjectMapper(new MessagePackFactory());
         connect();
@@ -83,9 +83,9 @@ public class Connection extends WebSocketClient {
     public void onMessage(ByteBuffer buf) {
 //        System.out.println("Connection.onMessage(ByteBuffer bytes)");
         if (Connection.this.listener != null) {
-            byte[] bytes = new byte[buf.capacity()];
-            buf.get(bytes, 0, bytes.length);
-            Connection.this.listener.onMessage(bytes);
+//            byte[] bytes = new byte[buf.capacity()];
+//            buf.get(bytes, 0, bytes.length);
+            Connection.this.listener.onMessage(buf);
         }
     }
 }
