@@ -24,7 +24,7 @@ dependencies {
 
 ## Usage examples
 
-- [agar.io-clone](https://github.com/doorbash/agar.io-clone) - Simple agar.io game clone using [libgdx](https://libgdx.badlogicgames.com/)
+- [agar.io-clone](https://github.com/doorbash/agar.io-clone) - simple agar.io game clone using [libgdx](https://libgdx.badlogicgames.com/)
 
 ## License
 
