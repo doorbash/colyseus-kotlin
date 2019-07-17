@@ -29,7 +29,6 @@ public class SchemaSerializer<T> {
 
     public void handshake(byte[] bytes) throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, NoSuchFieldException {
         Schema.SchemaReflection reflection = new Schema.SchemaReflection();
-        Iterator it = new Iterator(0);
-        reflection.decode(bytes, it);
+        reflection.decode(bytes);
     }
 }
