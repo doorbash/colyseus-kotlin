@@ -29,8 +29,8 @@ public class Connection extends WebSocketClient {
 
     Connection(URI uri, int connectTimeout, Map<String, String> httpHeaders, Listener listener) {
         super(uri, new Draft_6455(), httpHeaders, connectTimeout);
-        System.out.println("Connection()");
-        System.out.println("url is " + uri);
+//        System.out.println("Connection()");
+//        System.out.println("url is " + uri);
         this.listener = listener;
         this.msgpackMapper = new ObjectMapper(new MessagePackFactory());
         connect();

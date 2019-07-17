@@ -23,5 +23,5 @@ public interface ISchemaCollection<K, T> {
 
     void set(K key, T item);
 
-    ISchemaCollection Clone();
+    ISchemaCollection _clone();
 }
