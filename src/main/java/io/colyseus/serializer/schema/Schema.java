@@ -82,7 +82,7 @@ public class Schema {
             public void onAdd(T value, int key);
         }
 
-        interface onChangeListener<T> {
+        public interface onChangeListener<T> {
             public void onChange(T value, int key);
         }
 
@@ -98,6 +98,7 @@ public class Schema {
         public onRemoveListener<T> onRemoveListener;
 
         public ArraySchema() {
+            items = new ArrayList<>();
         }
 
         public ArraySchema(Class<T> childType) {
@@ -112,7 +113,7 @@ public class Schema {
         }
 
         @Override
-        public ISchemaCollection Clone() {
+        public ISchemaCollection _clone() {
             ArraySchema<T> clone = new ArraySchema<>(childType, items);
             clone.onAddListener = this.onAddListener;
             clone.onChangeListener = this.onChangeListener;
@@ -198,7 +199,7 @@ public class Schema {
             public void onAdd(T value, String key);
         }
 
-        interface onChangeListener<T> {
+        public interface onChangeListener<T> {
             public void onChange(T value, String key);
         }
 
@@ -206,12 +207,16 @@ public class Schema {
             public void onRemove(T value, String key);
         }
 
-        private final Class<T> childType;
+        private Class<T> childType;
 
         public LinkedHashMap<String, T> items;
         public onAddListener<T> onAddListener;
         public onChangeListener<T> onChangeListener;
         public onRemoveListener<T> onRemoveListener;
+
+        public MapSchema() {
+            items = new LinkedHashMap<>();
+        }
 
         public MapSchema(Class<T> childType) {
             this.childType = childType;
@@ -225,7 +230,7 @@ public class Schema {
         }
 
         @Override
-        public ISchemaCollection Clone() {
+        public ISchemaCollection _clone() {
             MapSchema<T> clone = new MapSchema<T>(childType, items);
             clone.onAddListener = this.onAddListener;
             clone.onChangeListener = this.onChangeListener;
@@ -240,6 +245,7 @@ public class Schema {
 
         @Override
         public boolean hasSchemaChild() {
+            if (childType == null) return false;
             return Schema.class.isAssignableFrom(childType);
         }
 
@@ -349,183 +355,188 @@ public class Schema {
 //            Class<?> childType = fieldChildTypes.get(field);
             String childPrimitiveType = fieldChildTypeNames.get(field);
             Object change = null;
-            Object value = null;
+            Object value;
             boolean hasChange;
-            if (fieldTypeName.equals("ref")) {
-                // child schema type
-                if (decode.nilCheck(bytes, it)) {
-                    it.offset++;
-                    value = null;
-                } else {
-                    value = thiz(field);
-                    if (value == null) {
-                        value = createTypeInstance(bytes, it, fieldType);
-                    }
-                    ((Schema) value).decode(bytes, it);
-                }
-
-                hasChange = true;
-            } else if (fieldTypeName.equals("array")) {
-                change = new ArrayList<>();
-
-                ISchemaCollection valueRef = (ISchemaCollection) thiz(field);
-                ISchemaCollection currentValue = valueRef.Clone();
-
-                int newLength = (int) decode.decodeNumber(bytes, it);
-                int numChanges = Math.min((int) decode.decodeNumber(bytes, it), newLength);
-                hasChange = numChanges > 0;
-                boolean hasIndexChange = false;
-
-                // ensure current array has the same length as encoded one
-                if (currentValue.count() > newLength) {
-                    for (int i = newLength; i < currentValue.count(); i++) {
-                        Object item = currentValue.get(i);
-                        if (item instanceof Schema && ((Schema) item).onRemove != null) {
-                            ((Schema) item).onRemove.onRemove();
+            switch (fieldTypeName) {
+                case "ref":
+                    // child schema type
+                    if (decode.nilCheck(bytes, it)) {
+                        it.offset++;
+                        value = null;
+                    } else {
+                        value = thiz(field);
+                        if (value == null) {
+                            value = createTypeInstance(bytes, it, fieldType);
                         }
-                        currentValue.invokeOnRemove(item, i);
-                    }
-                    // reduce items length
-                    ArrayList items = (ArrayList) currentValue.getItems();
-                    ArrayList newItems = new ArrayList();
-                    for (int i = 0; i < newLength; i++) {
-                        newItems.add(items.get(i));
-                    }
-                    currentValue.setItems(newItems);
-
-                }
-
-                for (int i = 0; i < numChanges; i++) {
-                    int newIndex = (int) decode.decodeNumber(bytes, it);
-
-                    int indexChangedFrom = -1;
-                    if (decode.indexChangeCheck(bytes, it)) {
-                        decode.decodeUint8(bytes, it);
-                        indexChangedFrom = (int) decode.decodeNumber(bytes, it);
-                        hasIndexChange = true;
+                        ((Schema) value).decode(bytes, it);
                     }
 
-                    boolean isNew = (!hasIndexChange && currentValue.get(newIndex) == null) || (hasIndexChange && indexChangedFrom != -1);
+                    hasChange = true;
+                    break;
+                case "array": {
+                    change = new ArrayList<>();
 
-                    if (currentValue.hasSchemaChild()) {
-                        Schema item;
+                    ISchemaCollection valueRef = (ISchemaCollection) thiz(field);
+                    ISchemaCollection currentValue = valueRef._clone();
+
+                    int newLength = (int) decode.decodeNumber(bytes, it);
+                    int numChanges = Math.min((int) decode.decodeNumber(bytes, it), newLength);
+                    hasChange = numChanges > 0;
+                    boolean hasIndexChange = false;
+
+                    // ensure current array has the same length as encoded one
+                    if (currentValue.count() > newLength) {
+                        for (int i = newLength; i < currentValue.count(); i++) {
+                            Object item = currentValue.get(i);
+                            if (item instanceof Schema && ((Schema) item).onRemove != null) {
+                                ((Schema) item).onRemove.onRemove();
+                            }
+                            currentValue.invokeOnRemove(item, i);
+                        }
+                        // reduce items length
+                        ArrayList items = (ArrayList) currentValue.getItems();
+                        ArrayList newItems = new ArrayList();
+                        for (int i = 0; i < newLength; i++) {
+                            newItems.add(items.get(i));
+                        }
+                        currentValue.setItems(newItems);
+
+                    }
+
+                    for (int i = 0; i < numChanges; i++) {
+                        int newIndex = (int) decode.decodeNumber(bytes, it);
+
+                        int indexChangedFrom = -1;
+                        if (decode.indexChangeCheck(bytes, it)) {
+                            decode.decodeUint8(bytes, it);
+                            indexChangedFrom = (int) decode.decodeNumber(bytes, it);
+                            hasIndexChange = true;
+                        }
+
+                        boolean isNew = (!hasIndexChange && currentValue.get(newIndex) == null) || (hasIndexChange && indexChangedFrom != -1);
+
+                        if (currentValue.hasSchemaChild()) {
+                            Schema item;
+
+                            if (isNew) {
+                                item = (Schema) createTypeInstance(bytes, it, currentValue.getChildType());
+                            } else if (indexChangedFrom != -1) {
+                                item = (Schema) valueRef.get(indexChangedFrom);
+                            } else {
+                                item = (Schema) valueRef.get(newIndex);
+                            }
+
+                            if (item == null) {
+                                item = (Schema) createTypeInstance(bytes, it, currentValue.getChildType());
+                                isNew = true;
+                            }
+
+                            if (decode.nilCheck(bytes, it)) {
+                                it.offset++;
+                                valueRef.invokeOnRemove(item, newIndex);
+                                continue;
+                            }
+
+                            item.decode(bytes, it);
+                            currentValue.set(newIndex, item);
+                        } else {
+                            currentValue.set(newIndex, decode.decodePrimitiveType(childPrimitiveType, bytes, it));
+                        }
 
                         if (isNew) {
-                            item = (Schema) createTypeInstance(bytes, it, currentValue.getChildType());
-
-                        } else if (indexChangedFrom != -1) {
-                            item = (Schema) valueRef.get(indexChangedFrom);
+                            currentValue.invokeOnAdd(currentValue.get(newIndex), newIndex);
                         } else {
-                            item = (Schema) valueRef.get(newIndex);
+                            currentValue.invokeOnChange(currentValue.get(newIndex), newIndex);
                         }
 
-                        if (item == null) {
-                            item = (Schema) createTypeInstance(bytes, it, currentValue.getChildType());
-                            isNew = true;
+                        ((ArrayList) change).add(currentValue.get(newIndex));
+                    }
+
+                    value = currentValue;
+
+                    break;
+                }
+                case "map": {
+                    ISchemaCollection valueRef = (ISchemaCollection) thiz(field);
+                    ISchemaCollection currentValue = valueRef._clone();
+
+                    int length = (int) decode.decodeNumber(bytes, it);
+                    hasChange = (length > 0);
+
+                    boolean hasIndexChange = false;
+
+                    LinkedHashMap items = (LinkedHashMap) currentValue.getItems();
+                    Object[] keys = items.keySet().toArray();
+                    String[] mapKeys = new String[items.size()];
+                    for (int i = 0; i < keys.length; i++) {
+                        mapKeys[i] = (String) keys[i];
+                    }
+
+                    for (int i = 0; i < length; i++) {
+                        // `encodeAll` may indicate a higher number of indexes it actually encodes
+                        // TODO: do not encode a higher number than actual encoded entries
+                        if (it.offset > bytes.length || bytes[it.offset] == SPEC.END_OF_STRUCTURE) {
+                            break;
+                        }
+
+                        String previousKey = null;
+                        if (decode.indexChangeCheck(bytes, it)) {
+                            it.offset++;
+                            previousKey = mapKeys[(int) decode.decodeNumber(bytes, it)];
+                            hasIndexChange = true;
+                        }
+
+                        boolean hasMapIndex = decode.numberCheck(bytes, it);
+                        boolean isSchemaType = currentValue.hasSchemaChild();
+
+                        String newKey = (hasMapIndex)
+                                ? mapKeys[(int) decode.decodeNumber(bytes, it)]
+                                : decode.decodeString(bytes, it);
+
+                        Object item;
+                        boolean isNew = (!hasIndexChange && valueRef.get(newKey) == null) || (hasIndexChange && previousKey == null && hasMapIndex);
+
+                        if (isNew && isSchemaType) {
+                            item = createTypeInstance(bytes, it, currentValue.getChildType());
+                        } else if (previousKey != null) {
+                            item = valueRef.get(previousKey);
+                        } else {
+                            item = valueRef.get(newKey);
                         }
 
                         if (decode.nilCheck(bytes, it)) {
                             it.offset++;
-                            valueRef.invokeOnRemove(item, newIndex);
+
+                            if (item != null && ((Schema) item).onRemove != null) {
+                                ((Schema) item).onRemove.onRemove();
+                            }
+
+                            valueRef.invokeOnRemove(item, newKey);
+                            items.remove(newKey);
                             continue;
+
+                        } else if (!isSchemaType) {
+                            currentValue.set(newKey, decode.decodePrimitiveType(childPrimitiveType, bytes, it));
+                        } else {
+                            ((Schema) item).decode(bytes, it);
+                            currentValue.set(newKey, item);
                         }
 
-                        item.decode(bytes, it);
-                        currentValue.set(newIndex, item);
-                    } else {
-                        currentValue.set(newIndex, decode.decodePrimitiveType(childPrimitiveType, bytes, it));
-                    }
-
-                    if (isNew) {
-                        currentValue.invokeOnAdd(currentValue.get(newIndex), newIndex);
-                    } else {
-                        currentValue.invokeOnChange(currentValue.get(newIndex), newIndex);
-                    }
-
-                    ((ArrayList) change).add(currentValue.get(newIndex));
-                }
-
-                value = currentValue;
-
-            } else if (fieldTypeName.equals("map")) {
-                ISchemaCollection valueRef = (ISchemaCollection) thiz(field);
-                ISchemaCollection currentValue = valueRef.Clone();
-
-                int length = (int) decode.decodeNumber(bytes, it);
-                hasChange = (length > 0);
-
-                boolean hasIndexChange = false;
-
-                LinkedHashMap items = (LinkedHashMap) currentValue.getItems();
-                Object[] keys = items.keySet().toArray();
-                String[] mapKeys = new String[items.size()];
-                for (int i = 0; i < keys.length; i++) {
-                    mapKeys[i] = (String) keys[i];
-                }
-
-                for (int i = 0; i < length; i++) {
-                    // `encodeAll` may indicate a higher number of indexes it actually encodes
-                    // TODO: do not encode a higher number than actual encoded entries
-                    if (it.offset > bytes.length || bytes[it.offset] == SPEC.END_OF_STRUCTURE) {
-                        break;
-                    }
-
-                    String previousKey = null;
-                    if (decode.indexChangeCheck(bytes, it)) {
-                        it.offset++;
-                        previousKey = mapKeys[(int) decode.decodeNumber(bytes, it)];
-                        hasIndexChange = true;
-                    }
-
-                    boolean hasMapIndex = decode.numberCheck(bytes, it);
-                    boolean isSchemaType = currentValue.hasSchemaChild();
-
-                    String newKey = (hasMapIndex)
-                            ? mapKeys[(int) decode.decodeNumber(bytes, it)]
-                            : decode.decodeString(bytes, it);
-
-                    Object item;
-                    boolean isNew = (!hasIndexChange && valueRef.get(newKey) == null) || (hasIndexChange && previousKey == null && hasMapIndex);
-
-                    if (isNew && isSchemaType) {
-                        item = createTypeInstance(bytes, it, currentValue.getChildType());
-
-                    } else if (previousKey != null) {
-                        item = valueRef.get(previousKey);
-                    } else {
-                        item = valueRef.get(newKey);
-                    }
-
-                    if (decode.nilCheck(bytes, it)) {
-                        it.offset++;
-
-                        if (item != null && ((Schema) item).onRemove != null) {
-                            ((Schema) item).onRemove.onRemove();
+                        if (isNew) {
+                            currentValue.invokeOnAdd(currentValue.get(newKey), newKey);
+                        } else {
+                            currentValue.invokeOnChange(currentValue.get(newKey), newKey);
                         }
-
-                        valueRef.invokeOnRemove(item, newKey);
-                        items.remove(newKey);
-                        continue;
-
-                    } else if (!isSchemaType) {
-                        currentValue.set(newKey, decode.decodePrimitiveType(childPrimitiveType, bytes, it));
-                    } else {
-                        ((Schema) item).decode(bytes, it);
-                        currentValue.set(newKey, item);
                     }
 
-                    if (isNew) {
-                        currentValue.invokeOnAdd(item, newKey);
-                    } else {
-                        currentValue.invokeOnChange(item, newKey);
-                    }
+                    value = currentValue;
+                    break;
                 }
-
-                value = currentValue;
-            } else {
-                // Primitive type
-                value = decode.decodePrimitiveType(fieldTypeName, bytes, it);
-                hasChange = true;
+                default:
+                    // Primitive type
+                    value = decode.decodePrimitiveType(fieldTypeName, bytes, it);
+                    hasChange = true;
+                    break;
             }
 
             if (hasChange) {
