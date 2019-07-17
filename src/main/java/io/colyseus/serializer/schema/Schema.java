@@ -433,6 +433,7 @@ public class Schema {
 
                             if (decode.nilCheck(bytes, it)) {
                                 it.offset++;
+                                if (item.onRemove != null) item.onRemove.onRemove();
                                 valueRef.invokeOnRemove(item, newIndex);
                                 continue;
                             }
@@ -507,7 +508,7 @@ public class Schema {
                         if (decode.nilCheck(bytes, it)) {
                             it.offset++;
 
-                            if (item != null && ((Schema) item).onRemove != null) {
+                            if (item instanceof Schema && ((Schema) item).onRemove != null) {
                                 ((Schema) item).onRemove.onRemove();
                             }
 
