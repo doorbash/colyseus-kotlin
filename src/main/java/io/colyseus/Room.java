@@ -60,6 +60,8 @@ public class Room<T> {
         }
     }
 
+    public T state;
+
     private Class<T> stateType;
 
     private LinkedHashMap<String, Object> options;
@@ -77,13 +79,17 @@ public class Room<T> {
     /**
      * Name of the room handler. Ex: "battle".
      */
-    private Client client;
+
     private String name;
+
+
+    private Client client;
     private List<Listener> listeners = new ArrayList<>();
     private Connection connection;
     private byte[] _previousState;
     private ObjectMapper msgpackMapper;
     private SchemaSerializer<T> serializer;
+    private int previousCode;
 
     public String getName() {
         return name;
@@ -135,13 +141,10 @@ public class Room<T> {
         this.msgpackMapper = new ObjectMapper(new MessagePackFactory());
         try {
             serializer = new SchemaSerializer<>(stateType);
+            state = serializer.state;
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-    public T getState() {
-        return serializer.getState();
     }
 
     public void addListener(Listener listener) {
@@ -188,9 +191,6 @@ public class Room<T> {
             }
         });
     }
-
-
-    int previousCode;
 
     private void onMessageCallback(ByteBuffer buf) {
         try {
@@ -312,14 +312,14 @@ public class Room<T> {
     private void setState(byte[] encodedState) throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, NoSuchFieldException {
         serializer.setState(encodedState);
         for (Listener listener : listeners) {
-            if (listener != null) listener.onStateChange(serializer.getState(), true);
+            if (listener != null) listener.onStateChange(serializer.state, true);
         }
     }
 
     private void patch(byte[] delta) throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, NoSuchFieldException {
         serializer.patch(delta);
         for (Listener listener : listeners) {
-            if (listener != null) listener.onStateChange(serializer.getState(), false);
+            if (listener != null) listener.onStateChange(serializer.state, false);
         }
     }
 }

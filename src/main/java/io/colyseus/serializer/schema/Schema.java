@@ -93,9 +93,9 @@ public class Schema {
         private Class<T> childType;
 
         public ArrayList<T> items;
-        public onAddListener<T> onAddListener;
-        public onChangeListener<T> onChangeListener;
-        public onRemoveListener<T> onRemoveListener;
+        public onAddListener<T> onAdd;
+        public onChangeListener<T> onChange;
+        public onRemoveListener<T> onRemove;
 
         public ArraySchema() {
             items = new ArrayList<>();
@@ -115,9 +115,9 @@ public class Schema {
         @Override
         public ISchemaCollection _clone() {
             ArraySchema<T> clone = new ArraySchema<>(childType, items);
-            clone.onAddListener = this.onAddListener;
-            clone.onChangeListener = this.onChangeListener;
-            clone.onRemoveListener = this.onRemoveListener;
+            clone.onAdd = this.onAdd;
+            clone.onChange = this.onChange;
+            clone.onRemove = this.onRemove;
             return clone;
         }
 
@@ -139,22 +139,22 @@ public class Schema {
 
         @Override
         public void invokeOnAdd(T item, Integer index) {
-            if (onAddListener != null) {
-                onAddListener.onAdd(item, index);
+            if (onAdd != null) {
+                onAdd.onAdd(item, index);
             }
         }
 
         @Override
         public void invokeOnChange(T item, Integer index) {
-            if (onChangeListener != null) {
-                onChangeListener.onChange(item, index);
+            if (onChange != null) {
+                onChange.onChange(item, index);
             }
         }
 
         @Override
         public void invokeOnRemove(T item, Integer index) {
-            if (onRemoveListener != null) {
-                onRemoveListener.onRemove(item, index);
+            if (onRemove != null) {
+                onRemove.onRemove(item, index);
             }
         }
 
@@ -170,7 +170,7 @@ public class Schema {
 
         @Override
         public T get(Integer key) {
-            if (key < items.size())
+            if (key >= 0 && key < items.size())
                 return items.get(key);
             return null;
         }
@@ -186,9 +186,9 @@ public class Schema {
 
         @Override
         public void triggerAll() {
-            if (onAddListener == null) return;
+            if (onAdd == null) return;
             for (int i = 0; i < items.size(); i++) {
-                onAddListener.onAdd(items.get(i), i);
+                onAdd.onAdd(items.get(i), i);
             }
         }
     }
@@ -210,9 +210,9 @@ public class Schema {
         private Class<T> childType;
 
         public LinkedHashMap<String, T> items;
-        public onAddListener<T> onAddListener;
-        public onChangeListener<T> onChangeListener;
-        public onRemoveListener<T> onRemoveListener;
+        public onAddListener<T> onAdd;
+        public onChangeListener<T> onChange;
+        public onRemoveListener<T> onRemove;
 
         public MapSchema() {
             items = new LinkedHashMap<>();
@@ -232,9 +232,9 @@ public class Schema {
         @Override
         public ISchemaCollection _clone() {
             MapSchema<T> clone = new MapSchema<T>(childType, items);
-            clone.onAddListener = this.onAddListener;
-            clone.onChangeListener = this.onChangeListener;
-            clone.onRemoveListener = this.onRemoveListener;
+            clone.onAdd = this.onAdd;
+            clone.onChange = this.onChange;
+            clone.onRemove = this.onRemove;
             return clone;
         }
 
@@ -296,30 +296,30 @@ public class Schema {
 
         @Override
         public void invokeOnAdd(T item, String key) {
-            if (onAddListener != null) {
-                onAddListener.onAdd(item, key);
+            if (onAdd != null) {
+                onAdd.onAdd(item, key);
             }
         }
 
         @Override
         public void invokeOnChange(T item, String key) {
-            if (onChangeListener != null) {
-                onChangeListener.onChange(item, key);
+            if (onChange != null) {
+                onChange.onChange(item, key);
             }
         }
 
         @Override
         public void invokeOnRemove(T item, String key) {
-            if (onRemoveListener != null) {
-                onRemoveListener.onRemove(item, key);
+            if (onRemove != null) {
+                onRemove.onRemove(item, key);
             }
         }
 
         @Override
         public void triggerAll() {
-            if (onAddListener == null) return;
+            if (onAdd == null) return;
             for (String key : items.keySet()) {
-                onAddListener.onAdd(items.get(key), key);
+                onAdd.onAdd(items.get(key), key);
             }
         }
 
