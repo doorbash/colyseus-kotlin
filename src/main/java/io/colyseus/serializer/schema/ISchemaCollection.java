@@ -7,10 +7,6 @@ public interface ISchemaCollection<K, T> {
 
     void invokeOnRemove(T item, K index);
 
-    Object getItems();
-
-    void setItems(Object items);
-
     void triggerAll();
 
     Class<?> getChildType();
