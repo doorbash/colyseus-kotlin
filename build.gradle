@@ -15,7 +15,7 @@ plugins {
 apply plugin: 'com.novoda.bintray-release'
 
 group 'ir.doorbash'
-version '2.1.0'
+version '2.2.0'
 
 sourceCompatibility = 1.8
 
@@ -32,7 +32,7 @@ dependencies {
 publish {
     def groupProjectID = 'ir.doorbash'
     def artifactProjectID = 'colyseus-java'
-    def publishVersionID = '2.1.0'
+    def publishVersionID = '2.2.0'
     userOrg = 'doorbash'
     repoName = 'ColyseusJavaClient'
     groupId = groupProjectID
