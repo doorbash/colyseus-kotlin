@@ -1,12 +1,6 @@
 package io.colyseus.serializer.schema;
 
 public interface ISchemaCollection<K, T> {
-    void invokeOnAdd(T item, K index);
-
-    void invokeOnChange(T item, K index);
-
-    void invokeOnRemove(T item, K index);
-
     Object getItems();
 
     void setItems(Object items);
