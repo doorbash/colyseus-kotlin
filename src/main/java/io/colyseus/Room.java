@@ -11,9 +11,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 public class Room<T> {
@@ -84,7 +82,7 @@ public class Room<T> {
 
 
     private Client client;
-    private List<Listener> listeners = new ArrayList<>();
+    Listener listener;
     private Connection connection;
     private byte[] _previousState;
     private ObjectMapper msgpackMapper;
@@ -147,12 +145,12 @@ public class Room<T> {
         }
     }
 
-    public void addListener(Listener listener) {
-        this.listeners.add(listener);
+    public void setListener(Listener listener) {
+        this.listener = listener;
     }
 
-    public void removeListener(Listener listener) {
-        this.listeners.remove(listener);
+    public void removeListener() {
+        this.listener = null;
     }
 
     void connect(String endpoint, Map<String, String> httpHeaders, int connectTimeout) throws URISyntaxException {
@@ -161,21 +159,15 @@ public class Room<T> {
             @Override
             public void onError(Exception e) {
                 //System.err.println("Possible causes: room's onAuth() failed or maxClients has been reached.");
-                for (Listener listener : listeners) {
-                    if (listener != null) listener.onError(e);
-                }
+                if (listener != null) listener.onError(e);
             }
 
             @Override
             public void onClose(int code, String reason, boolean remote) {
                 if (code == CloseFrame.PROTOCOL_ERROR && reason != null && reason.startsWith("Invalid status code received: 401")) {
-                    for (Listener listener : listeners) {
-                        if (listener != null) listener.onError(new Exception(reason));
-                    }
+                    if (listener != null) listener.onError(new Exception(reason));
                 }
-                for (Listener listener : listeners) {
-                    if (listener != null) listener.onLeave();
-                }
+                if (listener != null) listener.onLeave();
                 client.onRoomLeave(id);
 //                removeAllListeners();
             }
@@ -212,17 +204,13 @@ public class Room<T> {
                         buf.get(b, 0, b.length);
                         serializer.handshake(b);
                     }
-                    for (Listener listener : listeners) {
-                        if (listener != null) listener.onJoin();
-                    }
+                    if (listener != null) listener.onJoin();
                 } else if (code == Protocol.JOIN_ERROR) {
                     int length = buf.get();
                     byte[] bytes = new byte[length];
                     buf.get(bytes, 0, length);
                     String message = new String(bytes, StandardCharsets.UTF_8);
-                    for (Listener listener : listeners) {
-                        if (listener != null) listener.onError(new Exception(message));
-                    }
+                    if (listener != null) listener.onError(new Exception(message));
                 } else if (code == Protocol.LEAVE_ROOM) {
                     leave();
                 } else {
@@ -244,24 +232,18 @@ public class Room<T> {
                         buf.get(bytes);
                         Object data = msgpackMapper.readValue(bytes, new TypeReference<Object>() {
                         });
-                        for (Listener listener : listeners) {
-                            if (listener != null) listener.onMessage(data);
-                        }
+                        if (listener != null) listener.onMessage(data);
                     }
                 }
                 previousCode = 0;
             }
         } catch (Exception e) {
-            for (Listener listener : listeners) {
-                if (listener != null) listener.onError(e);
-            }
+            if (listener != null) listener.onError(e);
         }
     }
 
     private void dispatchOnMessage(Object message) {
-        for (Listener listener : listeners) {
-            if (listener != null) listener.onMessage(message);
-        }
+        if (listener != null) listener.onMessage(message);
     }
 
 //    public void removeAllListeners() {
@@ -284,9 +266,7 @@ public class Room<T> {
             }
 
         } else {
-            for (Listener listener : listeners) {
-                if (listener != null) listener.onLeave();
-            }
+            if (listener != null) listener.onLeave();
         }
     }
 
@@ -298,9 +278,8 @@ public class Room<T> {
             this.connection.send(Protocol.ROOM_DATA, this.id, data);
         else {
             // room is created but not joined yet
-            for (Listener listener : listeners) {
-                if (listener != null) listener.onError(new Exception("send error: Room is created but not joined yet"));
-            }
+            if (listener != null)
+                listener.onError(new Exception("send error: Room is created but not joined yet"));
         }
     }
 
@@ -311,15 +290,11 @@ public class Room<T> {
 
     private void setState(byte[] encodedState) throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, NoSuchFieldException {
         serializer.setState(encodedState);
-        for (Listener listener : listeners) {
-            if (listener != null) listener.onStateChange(serializer.state, true);
-        }
+        if (listener != null) listener.onStateChange(serializer.state, true);
     }
 
     private void patch(byte[] delta) throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, NoSuchFieldException {
         serializer.patch(delta);
-        for (Listener listener : listeners) {
-            if (listener != null) listener.onStateChange(serializer.state, false);
-        }
+        if (listener != null) listener.onStateChange(serializer.state, false);
     }
 }
