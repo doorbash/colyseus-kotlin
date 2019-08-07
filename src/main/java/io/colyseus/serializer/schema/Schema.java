@@ -69,7 +69,7 @@ public class Schema {
     }
 
     public interface onChange {
-        public void onChange(List<DataChange> changes);
+        public void onChange(List<Change> changes);
     }
 
     public interface onRemove {
@@ -90,12 +90,29 @@ public class Schema {
             public void onRemove(T value, int key);
         }
 
+        public interface onAddBatchListener<T> {
+            public void onAddBatch(List<KeyValue<Integer, T>> value);
+        }
+
+        public interface onChangeBatchListener<T> {
+            public void onChangeBatch(List<KeyValue<Integer, T>> value);
+        }
+
+        public interface onRemoveBatchListener<T> {
+            public void onRemoveBatch(List<KeyValue<Integer, T>> value);
+        }
+
         private Class<T> childType;
 
         public ArrayList<T> items;
+
         public onAddListener<T> onAdd;
         public onChangeListener<T> onChange;
         public onRemoveListener<T> onRemove;
+
+        public onAddBatchListener<T> onAddBatch;
+        public onChangeBatchListener<T> onChangeBatch;
+        public onRemoveBatchListener<T> onRemoveBatch;
 
         public ArraySchema() {
             items = new ArrayList<>();
@@ -118,6 +135,9 @@ public class Schema {
             clone.onAdd = this.onAdd;
             clone.onChange = this.onChange;
             clone.onRemove = this.onRemove;
+            clone.onAddBatch = this.onAddBatch;
+            clone.onChangeBatch = this.onChangeBatch;
+            clone.onRemoveBatch = this.onRemoveBatch;
             return clone;
         }
 
@@ -135,27 +155,6 @@ public class Schema {
         @Override
         public int count() {
             return items.size();
-        }
-
-        @Override
-        public void invokeOnAdd(T item, Integer index) {
-            if (onAdd != null) {
-                onAdd.onAdd(item, index);
-            }
-        }
-
-        @Override
-        public void invokeOnChange(T item, Integer index) {
-            if (onChange != null) {
-                onChange.onChange(item, index);
-            }
-        }
-
-        @Override
-        public void invokeOnRemove(T item, Integer index) {
-            if (onRemove != null) {
-                onRemove.onRemove(item, index);
-            }
         }
 
         @Override
@@ -207,12 +206,29 @@ public class Schema {
             public void onRemove(T value, String key);
         }
 
+        public interface onAddBatchListener<T> {
+            public void onAddBatch(List<KeyValue<String, T>> value);
+        }
+
+        public interface onChangeBatchListener<T> {
+            public void onChangeBatch(List<KeyValue<String, T>> value);
+        }
+
+        public interface onRemoveBatchListener<T> {
+            public void onRemoveBatch(List<KeyValue<String, T>> value);
+        }
+
         private Class<T> childType;
 
         public LinkedHashMap<String, T> items;
+
         public onAddListener<T> onAdd;
         public onChangeListener<T> onChange;
         public onRemoveListener<T> onRemove;
+
+        public onAddBatchListener<T> onAddBatch;
+        public onChangeBatchListener<T> onChangeBatch;
+        public onRemoveBatchListener<T> onRemoveBatch;
 
         public MapSchema() {
             items = new LinkedHashMap<>();
@@ -235,6 +251,9 @@ public class Schema {
             clone.onAdd = this.onAdd;
             clone.onChange = this.onChange;
             clone.onRemove = this.onRemove;
+            clone.onAddBatch = this.onAddBatch;
+            clone.onChangeBatch = this.onChangeBatch;
+            clone.onRemoveBatch = this.onRemoveBatch;
             return clone;
         }
 
@@ -295,34 +314,12 @@ public class Schema {
         }
 
         @Override
-        public void invokeOnAdd(T item, String key) {
-            if (onAdd != null) {
-                onAdd.onAdd(item, key);
-            }
-        }
-
-        @Override
-        public void invokeOnChange(T item, String key) {
-            if (onChange != null) {
-                onChange.onChange(item, key);
-            }
-        }
-
-        @Override
-        public void invokeOnRemove(T item, String key) {
-            if (onRemove != null) {
-                onRemove.onRemove(item, key);
-            }
-        }
-
-        @Override
         public void triggerAll() {
             if (onAdd == null) return;
             for (String key : items.keySet()) {
                 onAdd.onAdd(items.get(key), key);
             }
         }
-
 
         @Override
         public void setItems(Object items) {
@@ -337,7 +334,7 @@ public class Schema {
     public void decode(byte[] bytes, Iterator it) throws NoSuchFieldException, IllegalAccessException, NoSuchMethodException, InvocationTargetException, InstantiationException {
         Decoder decode = Decoder.getInstance();
 
-        List<DataChange> changes = new ArrayList<>();
+        List<Change> changes = new ArrayList<>();
 
         if (bytes[it.offset] == SPEC.TYPE_ID) {
             it.offset += 2;
@@ -376,8 +373,8 @@ public class Schema {
                 case "array": {
                     change = new ArrayList<>();
 
-                    ISchemaCollection valueRef = (ISchemaCollection) thiz(field);
-                    ISchemaCollection currentValue = valueRef._clone();
+                    ArraySchema valueRef = (ArraySchema) thiz(field);
+                    ArraySchema currentValue = (ArraySchema) valueRef._clone();
 
                     int newLength = (int) decode.decodeNumber(bytes, it);
                     int numChanges = Math.min((int) decode.decodeNumber(bytes, it), newLength);
@@ -391,7 +388,8 @@ public class Schema {
                             if (item instanceof Schema && ((Schema) item).onRemove != null) {
                                 ((Schema) item).onRemove.onRemove();
                             }
-                            currentValue.invokeOnRemove(item, i);
+                            if (currentValue.onRemove != null)
+                                currentValue.onRemove.onRemove(item, i);
                         }
                         // reduce items length
                         ArrayList items = (ArrayList) currentValue.getItems();
@@ -402,6 +400,14 @@ public class Schema {
                         currentValue.setItems(newItems);
 
                     }
+
+                    List<KeyValue<Integer, Object>> addList = null;
+                    List<KeyValue<Integer, Object>> changeList = null;
+                    List<KeyValue<Integer, Object>> removeList = null;
+
+                    if (currentValue.onAddBatch != null) addList = new ArrayList<>();
+                    if (currentValue.onChangeBatch != null) changeList = new ArrayList<>();
+                    if (currentValue.onRemoveBatch != null) removeList = new ArrayList<>();
 
                     for (int i = 0; i < numChanges; i++) {
                         int newIndex = (int) decode.decodeNumber(bytes, it);
@@ -434,7 +440,10 @@ public class Schema {
                             if (decode.nilCheck(bytes, it)) {
                                 it.offset++;
                                 if (item.onRemove != null) item.onRemove.onRemove();
-                                valueRef.invokeOnRemove(item, newIndex);
+                                if (valueRef.onRemove != null)
+                                    valueRef.onRemove.onRemove(item, newIndex);
+                                if (removeList != null)
+                                    removeList.add(new KeyValue<>(newIndex, item));
                                 continue;
                             }
 
@@ -445,21 +454,34 @@ public class Schema {
                         }
 
                         if (isNew) {
-                            currentValue.invokeOnAdd(currentValue.get(newIndex), newIndex);
+                            Object item = currentValue.get(newIndex);
+                            if (currentValue.onAdd != null)
+                                currentValue.onAdd.onAdd(item, newIndex);
+                            if (addList != null) addList.add(new KeyValue<>(newIndex, item));
                         } else {
-                            currentValue.invokeOnChange(currentValue.get(newIndex), newIndex);
+                            Object item = currentValue.get(newIndex);
+                            if (currentValue.onChange != null)
+                                currentValue.onChange.onChange(item, newIndex);
+                            if (changeList != null) changeList.add(new KeyValue<>(newIndex, item));
                         }
 
                         ((ArrayList) change).add(currentValue.get(newIndex));
                     }
+
+                    if (currentValue.onAddBatch != null && addList != null && !addList.isEmpty())
+                        currentValue.onAddBatch.onAddBatch(addList);
+                    if (currentValue.onChangeBatch != null && changeList != null && !changeList.isEmpty())
+                        currentValue.onChangeBatch.onChangeBatch(changeList);
+                    if (currentValue.onRemoveBatch != null && removeList != null && !removeList.isEmpty())
+                        currentValue.onRemoveBatch.onRemoveBatch(removeList);
 
                     value = currentValue;
 
                     break;
                 }
                 case "map": {
-                    ISchemaCollection valueRef = (ISchemaCollection) thiz(field);
-                    ISchemaCollection currentValue = valueRef._clone();
+                    MapSchema valueRef = (MapSchema) thiz(field);
+                    MapSchema currentValue = (MapSchema) valueRef._clone();
 
                     int length = (int) decode.decodeNumber(bytes, it);
                     hasChange = (length > 0);
@@ -472,6 +494,14 @@ public class Schema {
                     for (int i = 0; i < keys.length; i++) {
                         mapKeys[i] = (String) keys[i];
                     }
+
+                    List<KeyValue<String, Object>> addList = null;
+                    List<KeyValue<String, Object>> changeList = null;
+                    List<KeyValue<String, Object>> removeList = null;
+
+                    if (currentValue.onAddBatch != null) addList = new ArrayList<>();
+                    if (currentValue.onChangeBatch != null) changeList = new ArrayList<>();
+                    if (currentValue.onRemoveBatch != null) removeList = new ArrayList<>();
 
                     for (int i = 0; i < length; i++) {
                         // `encodeAll` may indicate a higher number of indexes it actually encodes
@@ -512,7 +542,8 @@ public class Schema {
                                 ((Schema) item).onRemove.onRemove();
                             }
 
-                            valueRef.invokeOnRemove(item, newKey);
+                            if (valueRef.onRemove != null) valueRef.onRemove.onRemove(item, newKey);
+                            if (removeList != null) removeList.add(new KeyValue<>(newKey, item));
                             items.remove(newKey);
                             continue;
 
@@ -524,11 +555,26 @@ public class Schema {
                         }
 
                         if (isNew) {
-                            currentValue.invokeOnAdd(currentValue.get(newKey), newKey);
+                            Object _item = currentValue.get(newKey);
+                            if (currentValue.onAdd != null)
+                                currentValue.onAdd.onAdd(_item, newKey);
+                            if (addList != null)
+                                addList.add(new KeyValue<>(newKey, _item));
                         } else {
-                            currentValue.invokeOnChange(currentValue.get(newKey), newKey);
+                            Object _item = currentValue.get(newKey);
+                            if (currentValue.onChange != null)
+                                currentValue.onChange.onChange(_item, newKey);
+                            if (changeList != null)
+                                changeList.add(new KeyValue<>(newKey, _item));
                         }
                     }
+
+                    if (currentValue.onAddBatch != null && addList != null && !addList.isEmpty())
+                        currentValue.onAddBatch.onAddBatch(addList);
+                    if (currentValue.onChangeBatch != null && changeList != null && !changeList.isEmpty())
+                        currentValue.onChangeBatch.onChangeBatch(changeList);
+                    if (currentValue.onRemoveBatch != null && removeList != null && !removeList.isEmpty())
+                        currentValue.onRemoveBatch.onRemoveBatch(removeList);
 
                     value = currentValue;
                     break;
@@ -541,7 +587,7 @@ public class Schema {
             }
 
             if (hasChange) {
-                DataChange dataChange = new DataChange();
+                Change dataChange = new Change();
                 dataChange.field = field;
                 dataChange.value = (change != null) ? change : value;
                 dataChange.previousValue = thiz(field);
@@ -560,11 +606,11 @@ public class Schema {
     public void triggerAll() {
         if (onChange == null) return;
         try {
-            List<DataChange> changes = new ArrayList<>();
+            List<Change> changes = new ArrayList<>();
             for (String field : fieldsByIndex.values()) {
                 Object value = thiz(field);
                 if (value != null) {
-                    DataChange change = new DataChange();
+                    Change change = new Change();
                     change.field = field;
                     change.value = value;
                     change.previousValue = null;
@@ -574,7 +620,7 @@ public class Schema {
             onChange.onChange(changes);
         } catch (NoSuchFieldException e) {
             e.printStackTrace();
-        } catch ( IllegalAccessException e) {
+        } catch (IllegalAccessException e) {
             e.printStackTrace();
         }
     }
@@ -646,6 +692,24 @@ public class Schema {
         public static final byte NIL = (byte) 192;
         public static final byte INDEX_CHANGE = (byte) 212;
         public static final byte TYPE_ID = (byte) 213;
+    }
+
+    public static class KeyValue<K, V> {
+        K key;
+        V value;
+
+        public KeyValue(K key, V value) {
+            this.key = key;
+            this.value = value;
+        }
+
+        public K getKey() {
+            return key;
+        }
+
+        public V getValue() {
+            return value;
+        }
     }
 
 }
