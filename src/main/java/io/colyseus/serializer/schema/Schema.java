@@ -78,7 +78,7 @@ public class Schema {
 
     public static class ArraySchema<T> implements ISchemaCollection<Integer, T> {
 
-        public final Object lock = new Object();
+//        public final Object lock = new Object();
 
         public interface onAddListener<T> {
             public void onAdd(T value, int key);
@@ -163,39 +163,37 @@ public class Schema {
         @Override
         public T get(Integer key) {
             if (key >= 0 && key < items.size())
-                synchronized (lock) {
-                    return items.get(key);
-                }
+                return items.get(key);
             return null;
         }
 
         @Override
         public void set(Integer key, T item) {
             if (key < items.size()) {
-                synchronized (lock) {
+//                synchronized (lock) {
                     items.set(key, item);
-                }
+//                }
             } else if (key == items.size()) {
-                synchronized (lock) {
+//                synchronized (lock) {
                     items.add(item);
-                }
+//                }
             }
         }
 
         @Override
         public void triggerAll() {
             if (onAdd == null) return;
-            synchronized (lock) {
+//            synchronized (lock) {
                 for (int i = 0; i < items.size(); i++) {
                     onAdd.onAdd(items.get(i), i);
                 }
-            }
+//            }
         }
     }
 
     public static class MapSchema<T> implements ISchemaCollection<String, T> {
 
-        public final Object lock = new Object();
+//        public final Object lock = new Object();
 
         public interface onAddListener<T> {
             public void onAdd(T value, String key);
@@ -253,35 +251,31 @@ public class Schema {
 
         @Override
         public T get(String key) {
-            synchronized (lock) {
-                return items.get(key);
-            }
+            return items.get(key);
         }
 
         @Override
         public void set(String key, T item) {
-            synchronized (lock) {
+//            synchronized (lock) {
                 items.put(key, item);
-            }
+//            }
         }
 
         public void clear() {
-            synchronized (lock) {
+//            synchronized (lock) {
                 items.clear();
-            }
+//            }
         }
 
         public boolean contains(String key, T value) {
-            synchronized (lock) {
-                T val = items.get(key);
-                return val != null && val.equals(value);
-            }
+            T val = items.get(key);
+            return val != null && val.equals(value);
         }
 
         public void remove(String key) {
-            synchronized (lock) {
+//            synchronized (lock) {
                 items.remove(key);
-            }
+//            }
         }
 
         public Set<String> keys() {
@@ -325,11 +319,11 @@ public class Schema {
         @Override
         public void triggerAll() {
             if (onAdd == null) return;
-            synchronized (lock) {
+//            synchronized (lock) {
                 for (String key : items.keySet()) {
                     onAdd.onAdd(items.get(key), key);
                 }
-            }
+//            }
         }
     }
 
@@ -382,7 +376,7 @@ public class Schema {
                     ArraySchema valueRef = (ArraySchema) thiz(field);
                     ArraySchema currentValue = (ArraySchema) valueRef._clone();
 
-                    synchronized (valueRef.lock) {
+//                    synchronized (valueRef.lock) {
 
                         int newLength = (int) decode.decodeNumber(bytes, it);
                         int numChanges = Math.min((int) decode.decodeNumber(bytes, it), newLength);
@@ -457,13 +451,13 @@ public class Schema {
                             ((ArrayList) change).add(currentValue.get(newIndex));
                         }
                         value = currentValue;
-                    }
+//                    }
                     break;
                 }
                 case "map": {
                     MapSchema valueRef = (MapSchema) thiz(field);
                     MapSchema currentValue = (MapSchema) valueRef._clone();
-                    synchronized (valueRef.lock) {
+//                    synchronized (valueRef.lock) {
                         int length = (int) decode.decodeNumber(bytes, it);
                         hasChange = (length > 0);
 
@@ -533,7 +527,7 @@ public class Schema {
                             }
                         }
                         value = currentValue;
-                    }
+//                    }
                     break;
                 }
                 default:
@@ -651,4 +645,7 @@ public class Schema {
         public static final byte TYPE_ID = (byte) 213;
     }
 
+    public Schema _clone() {
+        return this;
+    }
 }
