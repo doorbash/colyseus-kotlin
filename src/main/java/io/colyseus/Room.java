@@ -3,6 +3,8 @@ package io.colyseus;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.colyseus.serializer.SchemaSerializer;
+import io.colyseus.serializer.schema.Schema;
+
 import org.java_websocket.framing.CloseFrame;
 import org.msgpack.jackson.dataformat.MessagePackFactory;
 
@@ -16,9 +18,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public class Room<T> {
+public class Room<T extends Schema> {
 
-    public abstract static class Listener<T> {
+    public abstract static class Listener<T extends Schema> {
 
         protected Listener() {
 
@@ -62,7 +64,7 @@ public class Room<T> {
 
     public T state;
 
-    private Class<T> stateType;
+    private Class<Schema> stateType;
 
     private LinkedHashMap<String, Object> options;
 
@@ -88,7 +90,7 @@ public class Room<T> {
     private Connection connection;
     private byte[] _previousState;
     private ObjectMapper msgpackMapper;
-    private SchemaSerializer<T> serializer;
+    private SchemaSerializer<Schema> serializer;
     private int previousCode;
 
     public String getName() {
@@ -131,7 +133,7 @@ public class Room<T> {
 //        return state;
 //    }
 
-    Room(Class<T> type, Client client, String roomName, LinkedHashMap<String, Object> options) {
+    Room(Class<Schema> type, Client client, String roomName, LinkedHashMap<String, Object> options) {
 //        super(new LinkedHashMap<String, Object>());
 //        System.out.println("Room created: name: " + roomName + ", options: " + options);
         this.stateType = type;
@@ -141,7 +143,7 @@ public class Room<T> {
         this.msgpackMapper = new ObjectMapper(new MessagePackFactory());
         try {
             serializer = new SchemaSerializer<>(stateType);
-            state = serializer.state;
+            state = (T) serializer.state;
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -312,7 +314,7 @@ public class Room<T> {
     private void setState(byte[] encodedState) throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, NoSuchFieldException {
         serializer.setState(encodedState);
         for (Listener listener : listeners) {
-            if (listener != null) listener.onStateChange(serializer.state, true);
+            if (listener != null) listener.onStateChange(serializer.state._clone(), true);
         }
     }
 

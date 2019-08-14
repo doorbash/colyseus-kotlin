@@ -4,7 +4,7 @@ import io.colyseus.serializer.schema.Schema;
 
 import java.lang.reflect.InvocationTargetException;
 
-public class SchemaSerializer<T> {
+public class SchemaSerializer<T extends Schema> {
 
     public T state;
 
