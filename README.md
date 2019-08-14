@@ -10,7 +10,7 @@ Download [the latest release](https://github.com/doorbash/colyseus-java/releases
 <dependency>
     <groupId>ir.doorbash</groupId>
     <artifactId>colyseus-java</artifactId>
-    <version>2.2.1</version>
+    <version>2.2.2</version>
     <type>pom</type>
 </dependency>
 ```
@@ -18,7 +18,7 @@ Download [the latest release](https://github.com/doorbash/colyseus-java/releases
 Gradle: 
 ```groovy
 dependencies {
-    implementation 'ir.doorbash:colyseus-java:2.2.1'
+    implementation 'ir.doorbash:colyseus-java:2.2.2'
 }
 ```
 
