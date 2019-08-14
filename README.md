@@ -4,7 +4,7 @@ Implementation of Colyseus client for Java
 
 ## Download
 
-Download [the latest JAR](https://github.com/doorbash/colyseus-java/releases/latest) or grab via Maven:
+Download [the latest release](https://github.com/doorbash/colyseus-java/releases/latest) or grab via Maven:
 
 ```xml
 <dependency>
