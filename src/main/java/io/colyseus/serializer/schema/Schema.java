@@ -69,7 +69,7 @@ public class Schema {
     }
 
     public interface onChange {
-        public void onChange(List<DataChange> changes);
+        public void onChange(List<Change> changes);
     }
 
     public interface onRemove {
@@ -334,7 +334,7 @@ public class Schema {
     public void decode(byte[] bytes, Iterator it) throws NoSuchFieldException, IllegalAccessException, NoSuchMethodException, InvocationTargetException, InstantiationException {
         Decoder decode = Decoder.getInstance();
 
-        List<DataChange> changes = new ArrayList<>();
+        List<Change> changes = new ArrayList<>();
 
         if (bytes[it.offset] == SPEC.TYPE_ID) {
             it.offset += 2;
@@ -538,7 +538,7 @@ public class Schema {
             }
 
             if (hasChange) {
-                DataChange dataChange = new DataChange();
+                Change dataChange = new Change();
                 dataChange.field = field;
                 dataChange.value = (change != null) ? change : value;
                 dataChange.previousValue = thiz(field);
@@ -557,11 +557,11 @@ public class Schema {
     public void triggerAll() {
         if (onChange == null) return;
         try {
-            List<DataChange> changes = new ArrayList<>();
+            List<Change> changes = new ArrayList<>();
             for (String field : fieldsByIndex.values()) {
                 Object value = thiz(field);
                 if (value != null) {
-                    DataChange change = new DataChange();
+                    Change change = new Change();
                     change.field = field;
                     change.value = value;
                     change.previousValue = null;
