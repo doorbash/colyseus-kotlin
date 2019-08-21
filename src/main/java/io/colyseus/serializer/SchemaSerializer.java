@@ -14,12 +14,12 @@ public class SchemaSerializer<T extends Schema> {
 
     public void setState(byte[] data) throws NoSuchMethodException, NoSuchFieldException, InstantiationException, IllegalAccessException, InvocationTargetException {
 //        System.out.println("\n----------setState----------\n");
-        ((Schema) state).decode(data);
+        state.decode(data);
     }
 
     public void patch(byte[] data) throws NoSuchMethodException, NoSuchFieldException, InstantiationException, IllegalAccessException, InvocationTargetException {
 //        System.out.println("\n----------patch----------\n");
-        ((Schema) state).decode(data);
+        state.decode(data);
     }
 
     public void handshake(byte[] bytes) throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, NoSuchFieldException {
