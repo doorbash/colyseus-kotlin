@@ -32,10 +32,10 @@ public class Http {
     }
 
     public static String request(String url, String method, Map<String, String> httpHeaders, String body) throws IOException, HttpException {
-        System.out.println("sending http request to server...");
-        System.out.println("url is " + url);
-        System.out.println("http request body is " + body);
-        System.out.println("http request method is " + method);
+//        System.out.println("sending http request to server...");
+//        System.out.println("url is " + url);
+//        System.out.println("http request body is " + body);
+//        System.out.println("http request method is " + method);
         HttpURLConnection con = (HttpURLConnection) new URL(url).openConnection();
         con.setRequestMethod(method);
         if (httpHeaders != null) {
@@ -54,7 +54,7 @@ public class Http {
         }
 
         int code = con.getResponseCode();
-        System.out.println("http response code is " + code);
+//        System.out.println("http response code is " + code);
 
         InputStream is;
         if (code != HttpURLConnection.HTTP_OK)

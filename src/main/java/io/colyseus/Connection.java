@@ -30,8 +30,8 @@ public class Connection extends WebSocketClient {
 
     Connection(URI uri, Map<String, String> httpHeaders, Listener listener) {
         super(uri, new Draft_6455(), httpHeaders, CONNECT_TIMEOUT);
-        System.out.println("Connection()");
-        System.out.println("wsUrl is " + uri);
+//        System.out.println("Connection()");
+//        System.out.println("wsUrl is " + uri);
         this.listener = listener;
         this.msgpackMapper = new ObjectMapper(new MessagePackFactory());
         connect();
