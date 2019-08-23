@@ -1,21 +1,14 @@
 package io.colyseus;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.colyseus.serializer.SchemaSerializer;
 import io.colyseus.serializer.schema.Schema;
-
 import org.java_websocket.framing.CloseFrame;
-import org.msgpack.jackson.dataformat.MessagePackFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 public class Room<T extends Schema> {
@@ -64,9 +57,9 @@ public class Room<T extends Schema> {
 
     public T state;
 
-    private Class<Schema> stateType;
+    private Class<T> stateType;
 
-    private LinkedHashMap<String, Object> options;
+    // private LinkedHashMap<String, Object> options;
 
     /**
      * The unique identifier of the room.
@@ -83,14 +76,11 @@ public class Room<T extends Schema> {
      */
 
     private String name;
-
-
-    private Client client;
-    private List<Listener> listeners = new ArrayList<>();
+    private Listener listener;
     private Connection connection;
     private byte[] _previousState;
-    private ObjectMapper msgpackMapper;
-    private SchemaSerializer<Schema> serializer;
+    // private ObjectMapper msgpackMapper;
+    private SchemaSerializer<T> serializer;
     private int previousCode;
 
     public String getName() {
@@ -105,11 +95,11 @@ public class Room<T extends Schema> {
         return sessionId;
     }
 
-    public void setSessionId(String sessionId) {
+    void setSessionId(String sessionId) {
         this.sessionId = sessionId;
     }
 
-    String getId() {
+    public String getId() {
         return id;
     }
 
@@ -117,68 +107,53 @@ public class Room<T extends Schema> {
         this.id = id;
     }
 
-    LinkedHashMap<String, Object> getOptions() {
+    /*LinkedHashMap<String, Object> getOptions() {
         return options;
     }
 
     public void setOptions(LinkedHashMap<String, Object> options) {
         this.options = options;
-    }
-
-    public void setConnection(LinkedHashMap<String, Object> options) {
-        this.options = options;
-    }
+    }*/
 
 //    public LinkedHashMap<String, Object> getState() {
 //        return state;
 //    }
 
-    Room(Class<Schema> type, Client client, String roomName, LinkedHashMap<String, Object> options) {
+    Room(Class<T> type, String roomName) {
 //        super(new LinkedHashMap<String, Object>());
 //        System.out.println("Room created: name: " + roomName + ", options: " + options);
         this.stateType = type;
-        this.client = client;
         this.name = roomName;
-        this.options = options;
-        this.msgpackMapper = new ObjectMapper(new MessagePackFactory());
+        // this.options = options;
+        // this.msgpackMapper = new ObjectMapper(new MessagePackFactory());
         try {
             serializer = new SchemaSerializer<>(stateType);
-            state = (T) serializer.state;
+            state = serializer.state;
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public void addListener(Listener listener) {
-        this.listeners.add(listener);
+    public void setListener(Listener listener) {
+        this.listener = listener;
     }
 
-    public void removeListener(Listener listener) {
-        this.listeners.remove(listener);
-    }
-
-    void connect(String endpoint, Map<String, String> httpHeaders, int connectTimeout) throws URISyntaxException {
+    void connect(String endpoint, Map<String, String> httpHeaders) throws URISyntaxException {
 //        System.out.println("Room is connecting to " + endpoint);
-        this.connection = new Connection(new URI(endpoint), connectTimeout, httpHeaders, new Connection.Listener() {
+        this.connection = new Connection(new URI(endpoint), httpHeaders, new Connection.Listener() {
             @Override
             public void onError(Exception e) {
                 //System.err.println("Possible causes: room's onAuth() failed or maxClients has been reached.");
-                for (Listener listener : listeners) {
-                    if (listener != null) listener.onError(e);
-                }
+                if (listener != null) listener.onError(e);
             }
 
             @Override
             public void onClose(int code, String reason, boolean remote) {
                 if (code == CloseFrame.PROTOCOL_ERROR && reason != null && reason.startsWith("Invalid status code received: 401")) {
-                    for (Listener listener : listeners) {
-                        if (listener != null) listener.onError(new Exception(reason));
-                    }
+                    if (listener != null) listener.onError(new Exception(reason));
                 }
-                for (Listener listener : listeners) {
-                    if (listener != null) listener.onLeave();
-                }
-                client.onRoomLeave(id);
+                if (listener != null) listener.onLeave();
+                //client.onRoomLeave(id);
 //                removeAllListeners();
             }
 
@@ -202,9 +177,6 @@ public class Room<T extends Schema> {
                 if (code == Protocol.JOIN_ROOM) {
                     byte[] bytes = new byte[buf.get()];
                     buf.get(bytes, 0, bytes.length);
-                    sessionId = new String(bytes, StandardCharsets.UTF_8);
-                    bytes = new byte[buf.get()];
-                    buf.get(bytes, 0, bytes.length);
                     String serializerId = new String(bytes, StandardCharsets.UTF_8);
                     if (serializerId.equals("fossil-delta")) {
                         throw new Error("fossil-delta is not supported");
@@ -214,17 +186,13 @@ public class Room<T extends Schema> {
                         buf.get(b, 0, b.length);
                         serializer.handshake(b);
                     }
-                    for (Listener listener : listeners) {
-                        if (listener != null) listener.onJoin();
-                    }
+                    if (listener != null) listener.onJoin();
                 } else if (code == Protocol.JOIN_ERROR) {
                     int length = buf.get();
                     byte[] bytes = new byte[length];
                     buf.get(bytes, 0, length);
                     String message = new String(bytes, StandardCharsets.UTF_8);
-                    for (Listener listener : listeners) {
-                        if (listener != null) listener.onError(new Exception(message));
-                    }
+                    if (listener != null) listener.onError(new Exception(message));
                 } else if (code == Protocol.LEAVE_ROOM) {
                     leave();
                 } else {
@@ -243,27 +211,24 @@ public class Room<T extends Schema> {
                         patch(bytes);
                     } else if (previousCode == Protocol.ROOM_DATA) {
                         byte[] bytes = new byte[buf.remaining()];
-                        buf.get(bytes);
-                        Object data = msgpackMapper.readValue(bytes, new TypeReference<Object>() {
-                        });
-                        for (Listener listener : listeners) {
-                            if (listener != null) listener.onMessage(data);
-                        }
+                        //buf.get(bytes);
+                        System.out.println("ROOM_DATA: " + new String(bytes, StandardCharsets.UTF_8));
+//                        Object data = msgpackMapper.readValue(bytes, new TypeReference<Object>() {
+//                        });
+//                        for (Listener listener : listeners) {
+//                            if (listener != null) listener.onMessage(data);
+//                        }
                     }
                 }
                 previousCode = 0;
             }
         } catch (Exception e) {
-            for (Listener listener : listeners) {
-                if (listener != null) listener.onError(e);
-            }
+            if (listener != null) listener.onError(e);
         }
     }
 
     private void dispatchOnMessage(Object message) {
-        for (Listener listener : listeners) {
-            if (listener != null) listener.onMessage(message);
-        }
+        if (listener != null) listener.onMessage(message);
     }
 
 //    public void removeAllListeners() {
@@ -286,9 +251,7 @@ public class Room<T extends Schema> {
             }
 
         } else {
-            for (Listener listener : listeners) {
-                if (listener != null) listener.onLeave();
-            }
+            if (listener != null) listener.onLeave();
         }
     }
 
@@ -297,12 +260,10 @@ public class Room<T extends Schema> {
      */
     public void send(Object data) {
         if (this.connection != null)
-            this.connection.send(Protocol.ROOM_DATA, this.id, data);
+            this.connection.send(Protocol.ROOM_DATA, data);
         else {
             // room is created but not joined yet
-            for (Listener listener : listeners) {
-                if (listener != null) listener.onError(new Exception("send error: Room is created but not joined yet"));
-            }
+            if (listener != null) listener.onError(new Exception("send error: Room is created but not joined yet"));
         }
     }
 
@@ -313,15 +274,11 @@ public class Room<T extends Schema> {
 
     private void setState(byte[] encodedState) throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, NoSuchFieldException {
         serializer.setState(encodedState);
-        for (Listener listener : listeners) {
-            if (listener != null) listener.onStateChange(serializer.state._clone(), true);
-        }
+        if (listener != null) listener.onStateChange(serializer.state._clone(), true);
     }
 
     private void patch(byte[] delta) throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, NoSuchFieldException {
         serializer.patch(delta);
-        for (Listener listener : listeners) {
-            if (listener != null) listener.onStateChange(serializer.state, false);
-        }
+        if (listener != null) listener.onStateChange(serializer.state, false);
     }
 }

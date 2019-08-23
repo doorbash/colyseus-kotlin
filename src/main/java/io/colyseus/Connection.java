@@ -12,6 +12,7 @@ import java.util.LinkedList;
 import java.util.Map;
 
 public class Connection extends WebSocketClient {
+    private static final int CONNECT_TIMEOUT = 10000;
 
     interface Listener {
         void onError(Exception e);
@@ -27,10 +28,10 @@ public class Connection extends WebSocketClient {
     private Listener listener;
     private ObjectMapper msgpackMapper;
 
-    Connection(URI uri, int connectTimeout, Map<String, String> httpHeaders, Listener listener) {
-        super(uri, new Draft_6455(), httpHeaders, connectTimeout);
-//        System.out.println("Connection()");
-//        System.out.println("url is " + uri);
+    Connection(URI uri, Map<String, String> httpHeaders, Listener listener) {
+        super(uri, new Draft_6455(), httpHeaders, CONNECT_TIMEOUT);
+        System.out.println("Connection()");
+        System.out.println("wsUrl is " + uri);
         this.listener = listener;
         this.msgpackMapper = new ObjectMapper(new MessagePackFactory());
         connect();
