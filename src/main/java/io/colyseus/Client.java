@@ -2,6 +2,7 @@ package io.colyseus;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import io.colyseus.serializer.schema.Schema;
 import io.colyseus.util.Http;
 
@@ -133,21 +134,21 @@ public class Client {
 
             String res = Http.request(url, "POST", httpHeaders, body);
 
-            System.out.println("response is " + res);
+//            System.out.println("response is " + res);
 
             JsonNode response = objectMapper.readValue(res, JsonNode.class);
 
             if (response.has("error")) {
-                throw new MatchMakeException(response.get("error").asText(), response.get("error").asInt());
+                throw new MatchMakeException(response.get("error").asText(), response.get("code").asInt());
             }
 
             Room room = new Room<>(rootType, roomName);
 
             String roomId = response.get("room").get("roomId").asText();
-            System.out.println("room id is " + roomId);
+//            System.out.println("room id is " + roomId);
             room.setId(roomId);
             String sessionId = response.get("sessionId").asText();
-            System.out.println("session id is " + sessionId);
+//            System.out.println("session id is " + sessionId);
             room.setSessionId(sessionId);
             room.setListener(new Room.Listener<T>() {
                 @Override
@@ -164,7 +165,7 @@ public class Client {
             LinkedHashMap<String, Object> wsOptions = new LinkedHashMap<>();
             wsOptions.put("sessionId", room.getSessionId());
             String wsUrl = buildEndpoint(response.get("room"), wsOptions);
-            System.out.println("ws url is " + wsUrl);
+//            System.out.println("ws url is " + wsUrl);
             room.connect(wsUrl, wsHeaders);
         } catch (Exception e) {
             onError.onError(e);
@@ -172,6 +173,13 @@ public class Client {
     }
 
     public static class MatchMakeException extends Exception {
+        // MatchMaking Error Codes
+        public static final int ERR_MATCHMAKE_NO_HANDLER = 4210;
+        public static final int ERR_MATCHMAKE_INVALID_CRITERIA = 4211;
+        public static final int ERR_MATCHMAKE_INVALID_ROOM_ID = 4212;
+        public static final int ERR_MATCHMAKE_UNHANDLED = 4213; // generic exception during onCreate/onJoin
+        public static final int ERR_MATCHMAKE_EXPIRED = 4214; // generic exception during onCreate/onJoin
+
         public int code;
 
         public MatchMakeException(String message, int code) {
@@ -182,10 +190,13 @@ public class Client {
 
     private String buildEndpoint(JsonNode room, LinkedHashMap<String, Object> options) throws UnsupportedEncodingException {
         String charset = "UTF-8";
-        List<String> params = new ArrayList<>();
+        int i = 0;
+        StringBuilder params = new StringBuilder();
         for (String name : options.keySet()) {
-            params.add(URLEncoder.encode(name, charset) + "=" + URLEncoder.encode(options.get(name).toString(), charset));
+            if (i > 0) params.append("&");
+            params.append(URLEncoder.encode(name, charset)).append("=").append(URLEncoder.encode(options.get(name).toString(), charset));
+            i++;
         }
-        return this.endpoint + "/" + room.get("processId").asText() + "/" + room.get("roomId").asText() + "?" + String.join("&", params);
+        return this.endpoint + "/" + room.get("processId").asText() + "/" + room.get("roomId").asText() + "?" + params.toString();
     }
 }
