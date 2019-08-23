@@ -1,8 +1,12 @@
 package io.colyseus;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import io.colyseus.serializer.SchemaSerializer;
 import io.colyseus.serializer.schema.Schema;
 import org.java_websocket.framing.CloseFrame;
+import org.msgpack.jackson.dataformat.MessagePackFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
@@ -79,7 +83,7 @@ public class Room<T extends Schema> {
     private Listener listener;
     private Connection connection;
     private byte[] _previousState;
-    // private ObjectMapper msgpackMapper;
+     private ObjectMapper msgpackMapper;
     private SchemaSerializer<T> serializer;
     private int previousCode;
 
@@ -125,7 +129,7 @@ public class Room<T extends Schema> {
         this.stateType = type;
         this.name = roomName;
         // this.options = options;
-        // this.msgpackMapper = new ObjectMapper(new MessagePackFactory());
+         this.msgpackMapper = new ObjectMapper(new MessagePackFactory());
         try {
             serializer = new SchemaSerializer<>(stateType);
             state = serializer.state;
@@ -211,13 +215,10 @@ public class Room<T extends Schema> {
                         patch(bytes);
                     } else if (previousCode == Protocol.ROOM_DATA) {
                         byte[] bytes = new byte[buf.remaining()];
-                        //buf.get(bytes);
-                        System.out.println("ROOM_DATA: " + new String(bytes, StandardCharsets.UTF_8));
-//                        Object data = msgpackMapper.readValue(bytes, new TypeReference<Object>() {
-//                        });
-//                        for (Listener listener : listeners) {
-//                            if (listener != null) listener.onMessage(data);
-//                        }
+                        buf.get(bytes);
+                        Object data = msgpackMapper.readValue(bytes, new TypeReference<Object>() {
+                        });
+                        if (listener != null) listener.onMessage(data);
                     }
                 }
                 previousCode = 0;
