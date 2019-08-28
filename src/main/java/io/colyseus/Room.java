@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.colyseus.serializer.SchemaSerializer;
 import io.colyseus.serializer.schema.Schema;
+
 import org.java_websocket.framing.CloseFrame;
 import org.msgpack.jackson.dataformat.MessagePackFactory;
 
@@ -26,7 +27,7 @@ public class Room<T extends Schema> {
         /**
          * This event is triggered when the client leave the room.
          */
-        protected void onLeave() {
+        protected void onLeave(int code) {
 
         }
 
@@ -83,7 +84,7 @@ public class Room<T extends Schema> {
     private Listener listener;
     private Connection connection;
     private byte[] _previousState;
-     private ObjectMapper msgpackMapper;
+    private ObjectMapper msgpackMapper;
     private SchemaSerializer<T> serializer;
     private int previousCode;
 
@@ -129,7 +130,7 @@ public class Room<T extends Schema> {
         this.stateType = type;
         this.name = roomName;
         // this.options = options;
-         this.msgpackMapper = new ObjectMapper(new MessagePackFactory());
+        this.msgpackMapper = new ObjectMapper(new MessagePackFactory());
         try {
             serializer = new SchemaSerializer<>(stateType);
             state = serializer.state;
@@ -156,7 +157,7 @@ public class Room<T extends Schema> {
                 if (code == CloseFrame.PROTOCOL_ERROR && reason != null && reason.startsWith("Invalid status code received: 401")) {
                     if (listener != null) listener.onError(new Exception(reason));
                 }
-                if (listener != null) listener.onLeave();
+                if (listener != null) listener.onLeave(code);
                 //client.onRoomLeave(id);
 //                removeAllListeners();
             }
@@ -244,15 +245,14 @@ public class Room<T extends Schema> {
     }
 
     public void leave(boolean consented) {
-        if (id != null) {
+        if (this.connection != null) {
             if (consented) {
                 connection.send(Protocol.LEAVE_ROOM);
             } else {
                 connection.close();
             }
-
         } else {
-            if (listener != null) listener.onLeave();
+            if (listener != null) listener.onLeave(4000); // "consented" code
         }
     }
 
@@ -264,7 +264,8 @@ public class Room<T extends Schema> {
             this.connection.send(Protocol.ROOM_DATA, data);
         else {
             // room is created but not joined yet
-            if (listener != null) listener.onError(new Exception("send error: Room is created but not joined yet"));
+            if (listener != null)
+                listener.onError(new Exception("send error: Room is created but not joined yet"));
         }
     }
 
