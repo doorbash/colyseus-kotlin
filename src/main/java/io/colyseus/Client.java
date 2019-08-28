@@ -120,7 +120,7 @@ public class Client {
 
     private <T extends Schema> void createMatchMakeRequest(String method, String roomName, LinkedHashMap<String, Object> options, Class<T> rootType, Map<String, String> httpHeaders, Map<String, String> wsHeaders, RoomCallback callback, OnError onError) {
         try {
-            String url = endpoint.replace("ws", "http") + "/matchmake/" + method + "/" + roomName;
+            String url = endpoint.replace("ws", "http") + "/matchmake/" + method + "/" + URLEncoder.encode(roomName, "UTF-8");
 
             String body = null;
             if (options != null) {
