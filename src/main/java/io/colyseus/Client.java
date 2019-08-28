@@ -122,10 +122,10 @@ public class Client {
         try {
             String url = endpoint.replace("ws", "http") + "/matchmake/" + method + "/" + URLEncoder.encode(roomName, "UTF-8");
 
-            String body = null;
+            String body;
             if (options != null) {
                 body = objectMapper.writeValueAsString(objectMapper.convertValue(options, JsonNode.class));
-            }
+            } else body = "{}";
 
             if (httpHeaders == null) httpHeaders = new LinkedHashMap<>();
 
