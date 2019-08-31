@@ -307,11 +307,11 @@ public class Schema {
         }
     }
 
-    public void decode(byte[] bytes) throws NullPointerException, ArrayIndexOutOfBoundsException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, NoSuchFieldException {
+    public void decode(byte[] bytes) throws Exception {
         decode(bytes, new Iterator(0));
     }
 
-    public void decode(byte[] bytes, Iterator it) throws NullPointerException, ArrayIndexOutOfBoundsException, NoSuchFieldException, IllegalAccessException, NoSuchMethodException, InvocationTargetException, InstantiationException {
+    public void decode(byte[] bytes, Iterator it) throws Exception {
         Decoder decode = Decoder.getInstance();
 
         List<Change> changes = new ArrayList<>();
