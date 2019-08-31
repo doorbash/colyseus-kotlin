@@ -225,6 +225,7 @@ public class Room<T extends Schema> {
                 previousCode = 0;
             }
         } catch (Exception e) {
+            leave(false);
             if (listener != null) listener.onError(e);
         }
     }
@@ -274,12 +275,12 @@ public class Room<T extends Schema> {
         return this.sessionId != null;
     }
 
-    private void setState(byte[] encodedState) throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, NoSuchFieldException {
+    private void setState(byte[] encodedState) throws NullPointerException, ArrayIndexOutOfBoundsException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, NoSuchFieldException {
         serializer.setState(encodedState);
         if (listener != null) listener.onStateChange(serializer.state._clone(), true);
     }
 
-    private void patch(byte[] delta) throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, NoSuchFieldException {
+    private void patch(byte[] delta) throws NullPointerException, ArrayIndexOutOfBoundsException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, NoSuchFieldException {
         serializer.patch(delta);
         if (listener != null) listener.onStateChange(serializer.state, false);
     }
