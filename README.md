@@ -1,4 +1,4 @@
-# Colyseus-Java
+# Colyseus-Kotlin
 
 Implementation of Colyseus client using Kotlin
 
