@@ -53,7 +53,6 @@ open class Schema {
         @JsonIgnore
         var onRemove: ((value: T, key: Int?) -> Unit)? = null
 
-        constructor() {}
         constructor(childType: Class<T>?) {
             this.ct = childType
         }
@@ -63,11 +62,8 @@ open class Schema {
             clone.onAdd = onAdd
             clone.onChange = onChange
             clone.onRemove = onRemove
+            clone.addAll(this);
             return clone
-        }
-
-        override fun get(key: Int): T {
-            return super.get(key)
         }
 
         override fun _set(key: Int, item: T) {
@@ -128,7 +124,6 @@ open class Schema {
         @JsonIgnore
         var onRemove: ((value: T, key: String) -> Unit)? = null
 
-        constructor() {}
         constructor(childType: Class<T>?) {
             this.ct = childType
         }
@@ -138,6 +133,9 @@ open class Schema {
             clone.onAdd = onAdd
             clone.onChange = onChange
             clone.onRemove = onRemove
+            for (key in keys) {
+                clone[key] = this[key]!!
+            }
             return clone
         }
 

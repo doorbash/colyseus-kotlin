@@ -13,9 +13,9 @@ object Main {
 //            state.onChange = { changes -> println(changes) }
             state.onRemove = { println("state.onRemove") }
 
-            state.cells.onChange = {
-               cell : Cell?, key: String? ->
-                println(key + "  " + cell?.x)
+            state.players.onAdd = {
+               player : Player?, key: Int? ->
+                println("" + key + "  " + player?.x)
             }
 
             onLeave = { code -> println("onLeave $code") }
