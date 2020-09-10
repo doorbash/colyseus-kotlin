@@ -50,7 +50,7 @@ publish {
 }
 
 task run(dependsOn: classes, type: JavaExec) {
-    main = "io.colyseus.example.Main"
+    main = "io.colyseus.example.kotlin.Main"
     classpath = sourceSets.main.runtimeClasspath
     standardInput = System.in
     workingDir = new File(".")

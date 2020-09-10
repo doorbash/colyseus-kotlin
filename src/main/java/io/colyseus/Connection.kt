@@ -26,8 +26,7 @@ class Connection internal constructor(
     private val _enqueuedCalls = LinkedList<Any>()
     private val msgpackMapper: ObjectMapper = ObjectMapper(MessagePackFactory())
 
-
-    fun send(data: Any) {
+    fun _send(data: Any) {
         if (isOpen) {
             try {
                 val d = msgpackMapper.writeValueAsBytes(data)
@@ -46,7 +45,7 @@ class Connection internal constructor(
     override fun onOpen(handshakedata: ServerHandshake) {
         if (_enqueuedCalls.size > 0) {
             for (objects in _enqueuedCalls) {
-                this@Connection.send(objects)
+                _send(objects)
             }
             _enqueuedCalls.clear()
         }
@@ -67,5 +66,10 @@ class Connection internal constructor(
     override fun onMessage(buf: ByteBuffer) {
 //        println("received: $buf")
         onMessage?.invoke(buf)
+    }
+
+    override fun send(data: ByteArray?) {
+//        println("sending... " + Arrays.toString(data))
+        super.send(data)
     }
 }

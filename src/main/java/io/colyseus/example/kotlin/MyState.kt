@@ -1,4 +1,4 @@
-package io.colyseus.example
+package io.colyseus.example.kotlin
 
 import io.colyseus.serializer.schema.Schema
 import io.colyseus.annotations.SchemaClass

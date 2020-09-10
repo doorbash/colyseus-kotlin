@@ -1,4 +1,4 @@
-package io.colyseus.example
+package io.colyseus.example.kotlin
 
 import io.colyseus.Client
 import kotlinx.coroutines.runBlocking
@@ -14,8 +14,12 @@ object Main {
             state.onRemove = { println("state.onRemove") }
 
             state.players.onAdd = {
-               player : Player?, key: Int? ->
+                player : Player?, key: Int? ->
                 println("" + key + "  " + player?.x)
+
+                send("fire", Math.random() * 100)
+//                send("fire")
+//                send(0)
             }
 
             onLeave = { code -> println("onLeave $code") }

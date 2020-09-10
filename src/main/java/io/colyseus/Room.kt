@@ -71,7 +71,7 @@ class Room<T : Schema> internal constructor(var type: Class<T>, var name: String
                         serializer.handshake(bytes, offset)
                     }
                     onJoin?.invoke()
-                    connection?.send(Protocol.JOIN_ROOM)
+                    connection?._send(Protocol.JOIN_ROOM)
                 }
                 Protocol.ERROR -> {
                     val it = Iterator(1)
@@ -84,10 +84,10 @@ class Room<T : Schema> internal constructor(var type: Class<T>, var name: String
                     val message = messageType.getConstructor().newInstance() as Schema
                     message.decode(bytes, Iterator(2))
                     val messageHandler = onMessageHandlers["s" + messageType.typeName]
-                    if(messageHandler != null) {
+                    if (messageHandler != null) {
                         messageHandler.handler?.invoke(message)
                     } else {
-                        println("No handler for type = " + messageType.typeName)
+                        println("No handler for type " + messageType.typeName)
                     }
                 }
                 Protocol.LEAVE_ROOM -> leave()
@@ -111,7 +111,7 @@ class Room<T : Schema> internal constructor(var type: Class<T>, var name: String
                             )
                         }
                     } else {
-                        println("No handler for type = $type")
+                        println("No handler for type $type")
                     }
                 }
             }
@@ -127,7 +127,7 @@ class Room<T : Schema> internal constructor(var type: Class<T>, var name: String
     fun leave(consented: Boolean = true) {
         if (connection != null) {
             if (consented) {
-                connection!!.send(Protocol.LEAVE_ROOM)
+                connection!!._send(Protocol.LEAVE_ROOM)
             } else {
                 connection!!.close()
             }
@@ -137,13 +137,13 @@ class Room<T : Schema> internal constructor(var type: Class<T>, var name: String
     }
 
     // Send a message by number type, without payload
-    public fun send(type: Byte) {
-        connection?.send(arrayOf(Protocol.ROOM_DATA, type))
+    public fun send(type: Int) {
+        connection?.send(byteArrayOfInts(Protocol.ROOM_DATA, type))
     }
 
     // Send a message by number type with payload
-    public fun send(type: Byte, message: Any) {
-        val initialBytes: ByteArray = byteArrayOfInts(Protocol.ROOM_DATA, type.toInt())
+    public fun send(type: Int, message: Any) {
+        val initialBytes: ByteArray = byteArrayOfInts(Protocol.ROOM_DATA, type)
         val encodedMessage: ByteArray = msgpackMapper.writeValueAsBytes(message)
         connection?.send(initialBytes + encodedMessage)
     }
@@ -160,7 +160,7 @@ class Room<T : Schema> internal constructor(var type: Class<T>, var name: String
         val encodedMessage: ByteArray = msgpackMapper.writeValueAsBytes(message)
         val encodedType: ByteArray = type.toByteArray()
         val initialBytes: ByteArray = Encoder.getInitialBytesFromEncodedType(encodedType)
-        connection?.send(encodedType + encodedMessage + initialBytes)
+        connection?.send(initialBytes + encodedType + encodedMessage)
     }
 
     public inline fun <reified MessageType> onMessage(

@@ -2,7 +2,6 @@ package io.colyseus.serializer
 
 import io.colyseus.serializer.schema.Iterator
 import io.colyseus.serializer.schema.Schema
-import java.lang.Exception
 
 class SchemaSerializer<T : Schema>(type: Class<T>) {
     var state = type.getConstructor().newInstance()
@@ -45,6 +44,5 @@ class SchemaSerializer<T : Schema>(type: Class<T>) {
                 }
             }
         }
-
     }
 }
