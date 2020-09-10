@@ -5,19 +5,8 @@ import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 
 public class Decoder {
-    private static Decoder instance;
 
-    private Decoder() {
-    }
-
-    public static Decoder getInstance() {
-        if (instance == null) {
-            instance = new Decoder();
-        }
-        return instance;
-    }
-
-    public Object decodePrimitiveType(String type, byte[] bytes, Iterator it) {
+    public static Object decodePrimitiveType(String type, byte[] bytes, Iterator it) {
         switch (type) {
             case "string":
                 return decodeString(bytes, it);
@@ -49,7 +38,7 @@ public class Decoder {
         return null;
     }
 
-    public float decodeNumber(byte[] bytes, Iterator it) {
+    public static float decodeNumber(byte[] bytes, Iterator it) {
         int prefix = bytes[it.offset++] & 0xFF;
 
         if (prefix < 128) {
@@ -102,68 +91,68 @@ public class Decoder {
         return Float.NaN;
     }
 
-    public byte decodeInt8(byte[] bytes, Iterator it) {
+    public static byte decodeInt8(byte[] bytes, Iterator it) {
         return bytes[it.offset++];
     }
 
-    public short decodeUint8(byte[] bytes, Iterator it) {
+    public static short decodeUint8(byte[] bytes, Iterator it) {
         return (short) (bytes[it.offset++] & 0xFF);
     }
 
-    public short decodeInt16(byte[] bytes, Iterator it) {
+    public static short decodeInt16(byte[] bytes, Iterator it) {
         short ret = ByteBuffer.wrap(bytes, it.offset, 2).order(ByteOrder.LITTLE_ENDIAN).getShort();
         it.offset += 2;
         return ret;
     }
 
-    public int decodeUint16(byte[] bytes, Iterator it) {
+    public static int decodeUint16(byte[] bytes, Iterator it) {
         int ret = ByteBuffer.wrap(bytes, it.offset, 2).order(ByteOrder.LITTLE_ENDIAN).getShort() & 0xffff;
         it.offset += 2;
         return ret;
     }
 
-    public int decodeInt32(byte[] bytes, Iterator it) {
+    public static int decodeInt32(byte[] bytes, Iterator it) {
         int ret = ByteBuffer.wrap(bytes, it.offset, 4).order(ByteOrder.LITTLE_ENDIAN).getInt();
         it.offset += 4;
         return ret;
     }
 
-    public long decodeUint32(byte[] bytes, Iterator it) {
+    public static long decodeUint32(byte[] bytes, Iterator it) {
         long ret = ByteBuffer.wrap(bytes, it.offset, 4).order(ByteOrder.LITTLE_ENDIAN).getInt() & 0xffffffffL;
         it.offset += 4;
         return ret;
     }
 
-    public float decodeFloat32(byte[] bytes, Iterator it) {
+    public static float decodeFloat32(byte[] bytes, Iterator it) {
         float ret = ByteBuffer.wrap(bytes, it.offset, 4).order(ByteOrder.LITTLE_ENDIAN).getFloat();
         it.offset += 4;
         return ret;
     }
 
-    public double decodeFloat64(byte[] bytes, Iterator it) {
+    public static double decodeFloat64(byte[] bytes, Iterator it) {
         double ret = ByteBuffer.wrap(bytes, it.offset, 8).order(ByteOrder.LITTLE_ENDIAN).getDouble();
         it.offset += 8;
         return ret;
     }
 
-    public long decodeInt64(byte[] bytes, Iterator it) {
+    public static long decodeInt64(byte[] bytes, Iterator it) {
         long ret = ByteBuffer.wrap(bytes, it.offset, 8).order(ByteOrder.LITTLE_ENDIAN).getLong();
         it.offset += 8;
         return ret;
     }
 
-    public long decodeUint64(byte[] bytes, Iterator it) {
+    public static long decodeUint64(byte[] bytes, Iterator it) {
         // There is no ulong type in Java so let's use long instead ¯\_(ツ)_/¯
         long ret = ByteBuffer.wrap(bytes, it.offset, 8).order(ByteOrder.LITTLE_ENDIAN).getLong();
         it.offset += 8;
         return ret;
     }
 
-    public boolean decodeBoolean(byte[] bytes, Iterator it) {
+    public static boolean decodeBoolean(byte[] bytes, Iterator it) {
         return decodeUint8(bytes, it) > 0;
     }
 
-    public String decodeString(byte[] bytes, Iterator it) {
+    public static String decodeString(byte[] bytes, Iterator it) {
         int prefix = bytes[it.offset++] & 0xff;
 
         int length = 0;
@@ -185,18 +174,15 @@ public class Decoder {
         return str;
     }
 
-    /*
-     * Bool checks
-     */
-    public boolean nilCheck(byte[] bytes, Iterator it) {
+    public static boolean nilCheck(byte[] bytes, Iterator it) {
         return bytes[it.offset] == Schema.SPEC.NIL;
     }
 
-    public boolean indexChangeCheck(byte[] bytes, Iterator it) {
+    public static boolean indexChangeCheck(byte[] bytes, Iterator it) {
         return bytes[it.offset] == Schema.SPEC.INDEX_CHANGE;
     }
 
-    public boolean numberCheck(byte[] bytes, Iterator it) {
+    public static boolean numberCheck(byte[] bytes, Iterator it) {
         int prefix = bytes[it.offset] & 0xFF;
         return prefix < 0x80 || (prefix >= 0xca && prefix <= 0xd3);
     }

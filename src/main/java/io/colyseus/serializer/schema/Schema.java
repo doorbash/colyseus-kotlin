@@ -1,7 +1,8 @@
 package io.colyseus.serializer.schema;
 
-import io.colyseus.serializer.schema.annotations.SchemaClass;
-import io.colyseus.serializer.schema.annotations.SchemaField;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.colyseus.annotations.SchemaClass;
+import io.colyseus.annotations.SchemaField;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -32,12 +33,14 @@ import java.util.*;
 
 public class Schema {
 
-    private HashMap<Integer, String> fieldsByIndex = new HashMap<>();
-    private HashMap<String, String> fieldTypeNames = new HashMap<>();
-    private HashMap<String, Class<?>> fieldTypes = new HashMap<>();
-    private HashMap<String, String> fieldChildTypeNames = new HashMap<>();
+    public final HashMap<Integer, String> fieldsByIndex = new HashMap<>();
+    public final HashMap<String, String> fieldTypeNames = new HashMap<>();
+    public final HashMap<String, Class<?>> fieldTypes = new HashMap<>();
+    public final HashMap<String, String> fieldChildTypeNames = new HashMap<>();
 
+    @JsonIgnore
     public onChange onChange;
+    @JsonIgnore
     public onRemove onRemove;
 
     public Schema() {
@@ -65,7 +68,9 @@ public class Schema {
                     fieldChildTypeNames.put(fieldName, parts[2]);
                 }
             }
-        } else throw new Error(getClass() + " does not have @SchemaClass annotation");
+        } else if (!getClass().equals(Schema.class)) {
+            throw new Error(getClass() + " does not have @SchemaClass annotation");
+        }
     }
 
     public interface onChange {
@@ -76,7 +81,7 @@ public class Schema {
         public void onRemove();
     }
 
-    public static class ArraySchema<T> implements ISchemaCollection<Integer, T> {
+    public static class ArraySchema<T> extends ArrayList<T> implements ISchemaCollection<Integer, T> {
         public interface onAddListener<T> {
             public void onAdd(T value, int key);
         }
@@ -89,11 +94,14 @@ public class Schema {
             public void onRemove(T value, int key);
         }
 
+        @JsonIgnore
         private Class<T> childType;
 
-        public List<T> items = Collections.synchronizedList(new ArrayList<>());
+        @JsonIgnore
         public onAddListener<T> onAdd;
+        @JsonIgnore
         public onChangeListener<T> onChange;
+        @JsonIgnore
         public onRemoveListener<T> onRemove;
 
         public ArraySchema() {
@@ -103,19 +111,32 @@ public class Schema {
             this.childType = childType;
         }
 
-        public ArraySchema(Class<T> childType, List<T> items) {
-            this.childType = childType;
-            if (items == null) this.items = Collections.synchronizedList(new ArrayList<>());
-            else this.items = items;
-        }
-
         @Override
-        public ISchemaCollection _clone() {
-            ArraySchema<T> clone = new ArraySchema<>(childType, items);
+        public ArraySchema<T> _clone() {
+            ArraySchema<T> clone = new ArraySchema<>(childType);
             clone.onAdd = this.onAdd;
             clone.onChange = this.onChange;
             clone.onRemove = this.onRemove;
             return clone;
+        }
+
+        public T get(Integer key) {
+            if (key >= 0 && key < size())
+                return get(key);
+            return null;
+        }
+
+        @Override
+        public void _set(Integer key, T item) {
+            if (key < size()) {
+                set(key, item);
+            } else if (key == size()) {
+                add(item);
+            }
+        }
+
+        public boolean containsKeys(int index) {
+            return size() > index;
         }
 
         @Override
@@ -131,7 +152,7 @@ public class Schema {
 
         @Override
         public int count() {
-            return items.size();
+            return size();
         }
 
         @Override
@@ -156,33 +177,15 @@ public class Schema {
         }
 
         @Override
-        public T get(Integer key) {
-            if (key >= 0 && key < items.size())
-                return items.get(key);
-            return null;
-        }
-
-        @Override
-        public void set(Integer key, T item) {
-            if (key < items.size()) {
-                items.set(key, item);
-            } else if (key == items.size()) {
-                items.add(item);
-            }
-        }
-
-        @Override
         public void triggerAll() {
             if (onAdd == null) return;
-            synchronized (items) {
-                for (int i = 0; i < items.size(); i++) {
-                    onAdd.onAdd(items.get(i), i);
-                }
+            for (int i = 0; i < size(); i++) {
+                onAdd.onAdd(get(i), i);
             }
         }
     }
 
-    public static class MapSchema<T> implements ISchemaCollection<String, T> {
+    public static class MapSchema<T> extends LinkedHashMap<String, T> implements ISchemaCollection<String, T> {
         public interface onAddListener<T> {
             public void onAdd(T value, String key);
         }
@@ -195,11 +198,14 @@ public class Schema {
             public void onRemove(T value, String key);
         }
 
+        @JsonIgnore
         private Class<T> childType;
 
-        public Map<String, T> items = Collections.synchronizedMap(new LinkedHashMap<>());
+        @JsonIgnore
         public onAddListener<T> onAdd;
+        @JsonIgnore
         public onChangeListener<T> onChange;
+        @JsonIgnore
         public onRemoveListener<T> onRemove;
 
         public MapSchema() {
@@ -209,15 +215,9 @@ public class Schema {
             this.childType = childType;
         }
 
-        public MapSchema(Class<T> childType, Map<String, T> items) {
-            this.childType = childType;
-            if (items == null) this.items = Collections.synchronizedMap(new LinkedHashMap<>());
-            else this.items = items;
-        }
-
         @Override
-        public ISchemaCollection _clone() {
-            MapSchema<T> clone = new MapSchema<T>(childType, items);
+        public MapSchema<T> _clone() {
+            MapSchema<T> clone = new MapSchema<T>(childType);
             clone.onAdd = this.onAdd;
             clone.onChange = this.onChange;
             clone.onRemove = this.onRemove;
@@ -236,43 +236,13 @@ public class Schema {
         }
 
         @Override
-        public T get(String key) {
-            return items.get(key);
-        }
-
-        @Override
-        public void set(String key, T item) {
-            items.put(key, item);
-        }
-
-        public void clear() {
-            items.clear();
+        public int count() {
+            return size();
         }
 
         public boolean contains(String key, T value) {
-            T val = items.get(key);
+            T val = get(key);
             return val != null && val.equals(value);
-        }
-
-        public void remove(String key) {
-            items.remove(key);
-        }
-
-        public Set<String> keys() {
-            return items.keySet();
-        }
-
-        public Collection<T> values() {
-            return items.values();
-        }
-
-        @Override
-        public int count() {
-            return items.size();
-        }
-
-        public boolean containsKey(String key) {
-            return items.containsKey(key);
         }
 
         @Override
@@ -299,12 +269,16 @@ public class Schema {
         @Override
         public void triggerAll() {
             if (onAdd == null) return;
-            synchronized (items) {
-                for (String key : items.keySet()) {
-                    onAdd.onAdd(items.get(key), key);
-                }
+            for (String key : keySet()) {
+                onAdd.onAdd(get(key), key);
             }
         }
+
+        @Override
+        public void _set(String key, T item) {
+            put(key, item);
+        }
+
     }
 
     public void decode(byte[] bytes) throws Exception {
@@ -312,28 +286,31 @@ public class Schema {
     }
 
     public void decode(byte[] bytes, Iterator it) throws Exception {
-        Decoder decode = Decoder.getInstance();
+        if (it == null) it = new Iterator();
 
         List<Change> changes = new ArrayList<>();
-
-        if (bytes[it.offset] == SPEC.TYPE_ID) {
-            it.offset += 2;
-        }
-
         int totalBytes = bytes.length;
+
+
         while (it.offset < totalBytes) {
-            boolean isNil = decode.nilCheck(bytes, it);
+            if (bytes[it.offset] == SPEC.TYPE_ID) {
+                it.offset += 2;
+            }
+            boolean isNil = Decoder.nilCheck(bytes, it);
             if (isNil) it.offset++;
             int index = bytes[it.offset++];
             if (index == SPEC.END_OF_STRUCTURE) {
                 break;
             }
+            // Schema version mismatch (backwards compatibility)
+            if (!fieldsByIndex.containsKey(index)) continue;
             String field = fieldsByIndex.get(index);
             Class<?> fieldType = fieldTypes.get(field);
             String fieldTypeName = fieldTypeNames.get(field);
 //            Class<?> childType = fieldChildTypes.get(field);
+
             String childPrimitiveType = fieldChildTypeNames.get(field);
-            Object change = null;
+//            Object change = null;
             Object value;
             boolean hasChange;
             if (isNil) {
@@ -343,59 +320,65 @@ public class Schema {
                 switch (fieldTypeName) {
                     case "ref":
                         // child schema type
-                        if (decode.nilCheck(bytes, it)) {
-                            it.offset++;
-                            value = null;
-                        } else {
-                            value = thiz(field);
-                            if (value == null) {
-                                value = createTypeInstance(bytes, it, fieldType);
-                            }
-                            ((Schema) value).decode(bytes, it);
+//                        if (Decoder.nilCheck(bytes, it)) {
+//                            it.offset++;
+//                            value = null;
+//                        } else {
+                        value = thiz(field);
+                        if (value == null) {
+                            value = createTypeInstance(bytes, it, fieldType);
                         }
+                        ((Schema) value).decode(bytes, it);
+//                        }
 
                         hasChange = true;
                         break;
                     case "array": {
-                        change = new ArrayList<>();
+//                        change = new ArrayList<>();
 
                         ArraySchema valueRef = (ArraySchema) thiz(field);
-                        ArraySchema currentValue = (ArraySchema) valueRef._clone();
+                        ArraySchema currentValue = valueRef._clone();
 
-                        int newLength = (int) decode.decodeNumber(bytes, it);
-                        int numChanges = Math.min((int) decode.decodeNumber(bytes, it), newLength);
-                        hasChange = numChanges > 0;
+                        int newLength = (int) Decoder.decodeNumber(bytes, it);
+                        int numChanges = Math.min((int) Decoder.decodeNumber(bytes, it), newLength);
+                        boolean hasRemoval = currentValue.count() > newLength;
+                        hasChange = numChanges > 0 || hasRemoval;
                         boolean hasIndexChange = false;
 
                         // ensure current array has the same length as encoded one
-                        if (currentValue.count() > newLength) {
-                            List items = currentValue.items;
-                            for (int i = newLength; i < currentValue.count(); i++) {
+                        if (hasRemoval) {
+                            List removeList = new ArrayList();
+                            List items = currentValue;
+                            for (int i = newLength, l = currentValue.count(); i < l; i++) {
                                 Object item = items.get(i);
                                 if (item instanceof Schema && ((Schema) item).onRemove != null) {
                                     ((Schema) item).onRemove.onRemove();
                                 }
+                                removeList.add(item);
                                 currentValue.invokeOnRemove(item, i);
                             }
-                            // reduce items length
-                            ArrayList newItems = new ArrayList();
-                            for (int i = 0; i < newLength; i++) {
-                                newItems.add(currentValue.get(i));
+                            for (Object item : removeList) {
+                                items.remove(item);
                             }
-                            currentValue.items = newItems;
+                            // reduce items length
+//                            ArrayList newItems = new ArrayList();
+//                            for (int i = 0; i < newLength; i++) {
+//                                newItems.add(currentValue.get(i));
+//                            }
+//                            currentValue.items = newItems;
                         }
 
                         for (int i = 0; i < numChanges; i++) {
-                            int newIndex = (int) decode.decodeNumber(bytes, it);
+                            int newIndex = (int) Decoder.decodeNumber(bytes, it);
 
                             int indexChangedFrom = -1;
-                            if (decode.indexChangeCheck(bytes, it)) {
-                                decode.decodeUint8(bytes, it);
-                                indexChangedFrom = (int) decode.decodeNumber(bytes, it);
+                            if (Decoder.indexChangeCheck(bytes, it)) {
+                                Decoder.decodeUint8(bytes, it);
+                                indexChangedFrom = (int) Decoder.decodeNumber(bytes, it);
                                 hasIndexChange = true;
                             }
 
-                            boolean isNew = (!hasIndexChange && currentValue.get(newIndex) == null) || (hasIndexChange && indexChangedFrom != -1);
+                            boolean isNew = (!hasIndexChange && !currentValue.containsKeys(newIndex)) || (hasIndexChange && indexChangedFrom != -1);
 
                             if (currentValue.hasSchemaChild()) {
                                 Schema item;
@@ -413,17 +396,17 @@ public class Schema {
                                     isNew = true;
                                 }
 
-                                if (decode.nilCheck(bytes, it)) {
-                                    it.offset++;
-                                    if (item.onRemove != null) item.onRemove.onRemove();
-                                    valueRef.invokeOnRemove(item, newIndex);
-                                    continue;
-                                }
+//                                if (Decoder.nilCheck(bytes, it)) {
+//                                    it.offset++;
+//                                    if (item.onRemove != null) item.onRemove.onRemove();
+//                                    valueRef.invokeOnRemove(item, newIndex);
+//                                    continue;
+//                                }
 
                                 item.decode(bytes, it);
-                                currentValue.set(newIndex, item);
+                                currentValue._set(newIndex, item);
                             } else {
-                                currentValue.set(newIndex, decode.decodePrimitiveType(childPrimitiveType, bytes, it));
+                                currentValue._set(newIndex, Decoder.decodePrimitiveType(childPrimitiveType, bytes, it));
                             }
 
                             if (isNew) {
@@ -432,20 +415,20 @@ public class Schema {
                                 currentValue.invokeOnChange(currentValue.get(newIndex), newIndex);
                             }
 
-                            ((ArrayList) change).add(currentValue.get(newIndex));
+//                            ((ArrayList) change).add(currentValue.get(newIndex));
                         }
                         value = currentValue;
                         break;
                     }
                     case "map": {
                         MapSchema valueRef = (MapSchema) thiz(field);
-                        MapSchema currentValue = (MapSchema) valueRef._clone();
-                        int length = (int) decode.decodeNumber(bytes, it);
-                        hasChange = (length > 0);
+                        MapSchema currentValue = valueRef._clone();
+                        int length = (int) Decoder.decodeNumber(bytes, it);
+                        hasChange = length > 0;
 
                         boolean hasIndexChange = false;
 
-                        Map items = currentValue.items;
+                        Map items = currentValue;
                         Object[] keys = items.keySet().toArray();
                         String[] mapKeys = new String[items.size()];
                         for (int i = 0; i < keys.length; i++) {
@@ -459,25 +442,25 @@ public class Schema {
                                 break;
                             }
 
-                            boolean isNilItem = decode.nilCheck(bytes, it);
+                            boolean isNilItem = Decoder.nilCheck(bytes, it);
                             if (isNilItem) it.offset++;
 
                             String previousKey = null;
-                            if (decode.indexChangeCheck(bytes, it)) {
+                            if (Decoder.indexChangeCheck(bytes, it)) {
                                 it.offset++;
-                                previousKey = mapKeys[(int) decode.decodeNumber(bytes, it)];
+                                previousKey = mapKeys[(int) Decoder.decodeNumber(bytes, it)];
                                 hasIndexChange = true;
                             }
 
-                            boolean hasMapIndex = decode.numberCheck(bytes, it);
+                            boolean hasMapIndex = Decoder.numberCheck(bytes, it);
                             boolean isSchemaType = currentValue.hasSchemaChild();
 
                             String newKey = (hasMapIndex)
-                                    ? mapKeys[(int) decode.decodeNumber(bytes, it)]
-                                    : decode.decodeString(bytes, it);
+                                    ? mapKeys[(int) Decoder.decodeNumber(bytes, it)]
+                                    : Decoder.decodeString(bytes, it);
 
                             Object item;
-                            boolean isNew = (!hasIndexChange && valueRef.get(newKey) == null) || (hasIndexChange && previousKey == null && hasMapIndex);
+                            boolean isNew = (!hasIndexChange && !valueRef.containsKey(newKey)) || (hasIndexChange && previousKey == null && hasMapIndex);
 
                             if (isNew && isSchemaType) {
                                 item = createTypeInstance(bytes, it, currentValue.getChildType());
@@ -498,10 +481,10 @@ public class Schema {
                                 continue;
 
                             } else if (!isSchemaType) {
-                                currentValue.set(newKey, decode.decodePrimitiveType(childPrimitiveType, bytes, it));
+                                currentValue.put(newKey, Decoder.decodePrimitiveType(childPrimitiveType, bytes, it));
                             } else {
                                 ((Schema) item).decode(bytes, it);
-                                currentValue.set(newKey, item);
+                                currentValue.put(newKey, item);
                             }
 
                             if (isNew) {
@@ -515,7 +498,7 @@ public class Schema {
                     }
                     default:
                         // Primitive type
-                        value = decode.decodePrimitiveType(fieldTypeName, bytes, it);
+                        value = Decoder.decodePrimitiveType(fieldTypeName, bytes, it);
                         hasChange = true;
                         break;
                 }
@@ -523,7 +506,7 @@ public class Schema {
             if (hasChange) {
                 Change dataChange = new Change();
                 dataChange.field = field;
-                dataChange.value = (change != null) ? change : value;
+                dataChange.value = value;
                 dataChange.previousValue = thiz(field);
                 changes.add(dataChange);
             }
@@ -568,7 +551,7 @@ public class Schema {
     protected Object createTypeInstance(byte[] bytes, Iterator it, Class<?> type) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
         if (bytes[it.offset] == SPEC.TYPE_ID) {
             it.offset++;
-            int typeId = Decoder.getInstance().decodeUint8(bytes, it);
+            int typeId = Decoder.decodeUint8(bytes, it);
             Type anotherType = Context.getInstance().get(typeId);
             return anotherType.getClass().getConstructor().newInstance();
         } else {
@@ -597,6 +580,8 @@ public class Schema {
 
         @SchemaField("1/array/SchemaReflectionField")
         public ArraySchema<SchemaReflectionField> fields = new ArraySchema<>(SchemaReflectionField.class);
+
+        public Class<?> type;
     }
 
     @SchemaClass
@@ -618,6 +603,10 @@ public class Schema {
 
         public Type get(int typeid) {
             return typeIds.get(typeid);
+        }
+
+        public void setTypeId(Type type, Integer typeid) {
+            typeIds.put(typeid, type);
         }
     }
 

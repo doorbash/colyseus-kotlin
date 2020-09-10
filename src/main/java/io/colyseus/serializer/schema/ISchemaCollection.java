@@ -9,15 +9,13 @@ public interface ISchemaCollection<K, T> {
 
     void triggerAll();
 
+    void _set(K key, T item);
+
     Class<?> getChildType();
 
     boolean hasSchemaChild();
 
     int count();
-
-    T get(K key);
-
-    void set(K key, T item);
 
     ISchemaCollection _clone();
 }
