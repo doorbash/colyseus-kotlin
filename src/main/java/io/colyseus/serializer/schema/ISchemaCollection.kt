@@ -1,21 +1,9 @@
-package io.colyseus.serializer.schema;
+package io.colyseus.serializer.schema
 
-public interface ISchemaCollection<K, T> {
-    void invokeOnAdd(T item, K index);
-
-    void invokeOnChange(T item, K index);
-
-    void invokeOnRemove(T item, K index);
-
-    void triggerAll();
-
-    void _set(K key, T item);
-
-    Class<?> getChildType();
-
-    boolean hasSchemaChild();
-
-    int count();
-
-    ISchemaCollection _clone();
+interface ISchemaCollection<K, T> {
+    fun triggerAll()
+    fun _set(key: K, item: T)
+    fun hasSchemaChild(): Boolean
+    fun count(): Int
+    fun _clone(): ISchemaCollection<*, *>
 }

@@ -1,13 +1,7 @@
 package io.colyseus.example
 
-import com.fasterxml.jackson.core.JsonFactory
-import com.fasterxml.jackson.databind.ObjectMapper
 import io.colyseus.Client
-import io.colyseus.serializer.schema.Schema
-import io.colyseus.serializer.schema.Schema.onRemove
 import kotlinx.coroutines.runBlocking
-import org.msgpack.jackson.dataformat.MessagePackFactory
-import java.util.*
 
 object Main {
     @JvmStatic
@@ -16,8 +10,13 @@ object Main {
         with(client.joinOrCreate("game", MyState::class.java)) {
             println("connected to $name")
 
-//            state.onChange = onChange { changes: List<Change?>? -> println(changes) }
-            state.onRemove = onRemove { println("state.onRemove") }
+//            state.onChange = { changes -> println(changes) }
+            state.onRemove = { println("state.onRemove") }
+
+            state.cells.onChange = {
+               cell : Cell?, key: String? ->
+                println(key + "  " + cell?.x)
+            }
 
             onLeave = { code -> println("onLeave $code") }
             onError = { code, message ->

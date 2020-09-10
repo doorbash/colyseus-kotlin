@@ -1,12 +1,10 @@
-package io.colyseus.serializer.schema;
+package io.colyseus.serializer.schema
 
-public class Change {
-    public String field;
-    public Object value;
-    public Object previousValue;
-
-    @Override
-    public String toString() {
-        return field + ": " + previousValue + " --> " + value;
+class Change {
+    var field: String? = null
+    var value: Any? = null
+    var previousValue: Any? = null
+    override fun toString(): String {
+        return "$field: $previousValue --> $value"
     }
 }

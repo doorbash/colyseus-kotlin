@@ -25,7 +25,7 @@ class SchemaSerializer<T : Schema>(type: Class<T>) {
             reflection.decode(bytes!!, Iterator(offset))
             addTypes(reflection,schema = state)
             for(rt in reflection.types) {
-                Schema.Context.getInstance().setTypeId(rt.type, rt.id)
+                Schema.Context.Companion.instance.setTypeId(rt.type!!, rt.id)
             }
         }
     }

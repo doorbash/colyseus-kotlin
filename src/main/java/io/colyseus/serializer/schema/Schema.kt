@@ -1,364 +1,261 @@
-package io.colyseus.serializer.schema;
+package io.colyseus.serializer.schema
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import io.colyseus.annotations.SchemaClass;
-import io.colyseus.annotations.SchemaField;
-
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Type;
-import java.util.*;
+import com.fasterxml.jackson.annotation.JsonIgnore
+import io.colyseus.annotations.SchemaClass
+import io.colyseus.annotations.SchemaField
+import java.lang.reflect.InvocationTargetException
+import java.lang.reflect.Type
+import java.util.*
 
 /*
-    Allowed primitive types:
-        "string"
-        "number"
-        "boolean"
-        "int8"
-        "uint8"
-        "int16"
-        "uint16"
-        "int32"
-        "uint32"
-        "int64"
-        "uint64"
-        "float32"
-        "float64"
-        Allowed reference types:
-        "ref"
-        "array"
-        "map"
- */
-
-public class Schema {
-
-    public final HashMap<Integer, String> fieldsByIndex = new HashMap<>();
-    public final HashMap<String, String> fieldTypeNames = new HashMap<>();
-    public final HashMap<String, Class<?>> fieldTypes = new HashMap<>();
-    public final HashMap<String, String> fieldChildTypeNames = new HashMap<>();
+   Allowed primitive types:
+       "string"
+       "number"
+       "boolean"
+       "int8"
+       "uint8"
+       "int16"
+       "uint16"
+       "int32"
+       "uint32"
+       "int64"
+       "uint64"
+       "float32"
+       "float64"
+       Allowed reference types:
+       "ref"
+       "array"
+       "map"
+*/
+open class Schema {
+    val fieldsByIndex = HashMap<Int, String>()
+    val fieldTypeNames = HashMap<String?, String>()
+    val fieldTypes = HashMap<String?, Class<*>>()
+    val fieldChildTypeNames = HashMap<String?, String>()
 
     @JsonIgnore
-    public onChange onChange;
+    var onChange: ((changes: List<Change?>?) -> Unit)? = null
+
     @JsonIgnore
-    public onRemove onRemove;
+    var onRemove: (() -> Unit)? = null
 
-    public Schema() {
-        if (getClass().isAnnotationPresent(SchemaClass.class)) {
-
-            for (Field field : getClass().getDeclaredFields()) {
-
-                if (!field.isAnnotationPresent(SchemaField.class)) continue;
-
-                String fieldName = field.getName();
-                Class<?> fieldType = field.getType();
-                String annotation = field.getAnnotation(SchemaField.class).value();
-                String[] parts = annotation.split("/");
-                int fieldIndex = Integer.parseInt(parts[0]);
-                String schemaFieldTypeName = parts[1];
-//                String javaFieldTypeName = fieldType.getCanonicalName();
-
-//                System.out.println(fieldIndex + " " + fieldName + " " + schemaFieldTypeName + " " + javaFieldTypeName);
-
-                fieldsByIndex.put(fieldIndex, fieldName);
-                fieldTypeNames.put(fieldName, schemaFieldTypeName);
-                fieldTypes.put(fieldName, fieldType);
-
-                if (schemaFieldTypeName.equals("array") || schemaFieldTypeName.equals("map")) {
-                    fieldChildTypeNames.put(fieldName, parts[2]);
-                }
-            }
-        } else if (!getClass().equals(Schema.class)) {
-            throw new Error(getClass() + " does not have @SchemaClass annotation");
-        }
-    }
-
-    public interface onChange {
-        public void onChange(List<Change> changes);
-    }
-
-    public interface onRemove {
-        public void onRemove();
-    }
-
-    public static class ArraySchema<T> extends ArrayList<T> implements ISchemaCollection<Integer, T> {
-        public interface onAddListener<T> {
-            public void onAdd(T value, int key);
-        }
-
-        public interface onChangeListener<T> {
-            public void onChange(T value, int key);
-        }
-
-        public interface onRemoveListener<T> {
-            public void onRemove(T value, int key);
-        }
+    class ArraySchema<T> : ArrayList<T>, ISchemaCollection<Int, T> {
 
         @JsonIgnore
-        private Class<T> childType;
+        private var ct: Class<T>? = null
 
         @JsonIgnore
-        public onAddListener<T> onAdd;
+        var onAdd: ((value: T?, key: Int?) -> Unit)? = null
+
         @JsonIgnore
-        public onChangeListener<T> onChange;
+        var onChange: ((value: T, key: Int?) -> Unit)? = null
+
         @JsonIgnore
-        public onRemoveListener<T> onRemove;
+        var onRemove: ((value: T, key: Int?) -> Unit)? = null
 
-        public ArraySchema() {
+        constructor() {}
+        constructor(childType: Class<T>?) {
+            this.ct = childType
         }
 
-        public ArraySchema(Class<T> childType) {
-            this.childType = childType;
+        override fun _clone(): ArraySchema<T> {
+            val clone: ArraySchema<T> = ArraySchema(ct)
+            clone.onAdd = onAdd
+            clone.onChange = onChange
+            clone.onRemove = onRemove
+            return clone
         }
 
-        @Override
-        public ArraySchema<T> _clone() {
-            ArraySchema<T> clone = new ArraySchema<>(childType);
-            clone.onAdd = this.onAdd;
-            clone.onChange = this.onChange;
-            clone.onRemove = this.onRemove;
-            return clone;
+        override fun get(key: Int): T {
+            return super.get(key)
         }
 
-        public T get(Integer key) {
-            if (key >= 0 && key < size())
-                return get(key);
-            return null;
-        }
-
-        @Override
-        public void _set(Integer key, T item) {
-            if (key < size()) {
-                set(key, item);
-            } else if (key == size()) {
-                add(item);
+        override fun _set(key: Int, item: T) {
+            if (key < size) {
+                set(key, item)
+            } else if (key == size) {
+                add(item)
             }
         }
 
-        public boolean containsKeys(int index) {
-            return size() > index;
+        fun containsKeys(index: Int): Boolean {
+            return size > index
         }
 
-        @Override
-        public Class<?> getChildType() {
-            return childType;
+        fun getChildType(): Class<*>? {
+            return ct
         }
 
-        @Override
-        public boolean hasSchemaChild() {
-            if (childType == null) return false;
-            return Schema.class.isAssignableFrom(childType);
+        override fun hasSchemaChild(): Boolean {
+            return if (ct == null) false else Schema::class.java.isAssignableFrom(ct)
         }
 
-        @Override
-        public int count() {
-            return size();
+        override fun count(): Int {
+            return size
         }
 
-        @Override
-        public void invokeOnAdd(T item, Integer index) {
-            if (onAdd != null) {
-                onAdd.onAdd(item, index);
-            }
+        fun invokeOnAdd(item: T, key: Int) {
+            onAdd?.invoke(item, key)
         }
 
-        @Override
-        public void invokeOnChange(T item, Integer index) {
-            if (onChange != null) {
-                onChange.onChange(item, index);
-            }
+        fun invokeOnChange(item: T, key: Int) {
+            onChange?.invoke(item, key)
         }
 
-        @Override
-        public void invokeOnRemove(T item, Integer index) {
-            if (onRemove != null) {
-                onRemove.onRemove(item, index);
-            }
+        fun invokeOnRemove(item: T, key: Int) {
+            onRemove?.invoke(item, key)
         }
 
-        @Override
-        public void triggerAll() {
-            if (onAdd == null) return;
-            for (int i = 0; i < size(); i++) {
-                onAdd.onAdd(get(i), i);
+        override fun triggerAll() {
+            if (onAdd == null) return
+            for (i in 0 until size) {
+                onAdd?.invoke(get(i), i)
             }
         }
     }
 
-    public static class MapSchema<T> extends LinkedHashMap<String, T> implements ISchemaCollection<String, T> {
-        public interface onAddListener<T> {
-            public void onAdd(T value, String key);
-        }
-
-        public interface onChangeListener<T> {
-            public void onChange(T value, String key);
-        }
-
-        public interface onRemoveListener<T> {
-            public void onRemove(T value, String key);
-        }
+    class MapSchema<T> : LinkedHashMap<String?, T>, ISchemaCollection<String?, T> {
 
         @JsonIgnore
-        private Class<T> childType;
+        private var ct: Class<T>? = null
 
         @JsonIgnore
-        public onAddListener<T> onAdd;
+        var onAdd: ((value: T, key: String) -> Unit)? = null
+
         @JsonIgnore
-        public onChangeListener<T> onChange;
+        var onChange: ((value: T, key: String) -> Unit)? = null
+
         @JsonIgnore
-        public onRemoveListener<T> onRemove;
+        var onRemove: ((value: T, key: String) -> Unit)? = null
 
-        public MapSchema() {
+        constructor() {}
+        constructor(childType: Class<T>?) {
+            this.ct = childType
         }
 
-        public MapSchema(Class<T> childType) {
-            this.childType = childType;
+        override fun _clone(): MapSchema<T> {
+            val clone = MapSchema(ct)
+            clone.onAdd = onAdd
+            clone.onChange = onChange
+            clone.onRemove = onRemove
+            return clone
         }
 
-        @Override
-        public MapSchema<T> _clone() {
-            MapSchema<T> clone = new MapSchema<T>(childType);
-            clone.onAdd = this.onAdd;
-            clone.onChange = this.onChange;
-            clone.onRemove = this.onRemove;
-            return clone;
+        fun getChildType(): Class<*>? {
+            return ct
         }
 
-        @Override
-        public Class<?> getChildType() {
-            return childType;
+        override fun hasSchemaChild(): Boolean {
+            return if (ct == null) false else Schema::class.java.isAssignableFrom(ct)
         }
 
-        @Override
-        public boolean hasSchemaChild() {
-            if (childType == null) return false;
-            return Schema.class.isAssignableFrom(childType);
+        override fun count(): Int {
+            return size
         }
 
-        @Override
-        public int count() {
-            return size();
+        fun contains(key: String?, value: T): Boolean {
+            val `val` = get(key)
+            return `val` != null && `val` == value
         }
 
-        public boolean contains(String key, T value) {
-            T val = get(key);
-            return val != null && val.equals(value);
+        fun invokeOnAdd(item: T, key: String) {
+            onAdd?.invoke(item, key)
         }
 
-        @Override
-        public void invokeOnAdd(T item, String key) {
-            if (onAdd != null) {
-                onAdd.onAdd(item, key);
+        fun invokeOnChange(item: T, key: String) {
+            onChange?.invoke(item, key)
+        }
+
+        fun invokeOnRemove(item: T, key: String) {
+            onRemove?.invoke(item, key)
+        }
+
+        override fun triggerAll() {
+            if (onAdd == null) return
+            for (key in keys) {
+                onAdd?.invoke(get(key)!!, key!!)
             }
         }
 
-        @Override
-        public void invokeOnChange(T item, String key) {
-            if (onChange != null) {
-                onChange.onChange(item, key);
-            }
+        override fun _set(key: String?, item: T) {
+            put(key, item)
         }
-
-        @Override
-        public void invokeOnRemove(T item, String key) {
-            if (onRemove != null) {
-                onRemove.onRemove(item, key);
-            }
-        }
-
-        @Override
-        public void triggerAll() {
-            if (onAdd == null) return;
-            for (String key : keySet()) {
-                onAdd.onAdd(get(key), key);
-            }
-        }
-
-        @Override
-        public void _set(String key, T item) {
-            put(key, item);
-        }
-
     }
 
-    public void decode(byte[] bytes) throws Exception {
-        decode(bytes, new Iterator(0));
-    }
-
-    public void decode(byte[] bytes, Iterator it) throws Exception {
-        if (it == null) it = new Iterator();
-
-        List<Change> changes = new ArrayList<>();
-        int totalBytes = bytes.length;
-
-
+    @JvmOverloads
+    @Throws(Exception::class)
+    fun decode(bytes: ByteArray, it: Iterator? = Iterator(0)) {
+        var it = it
+        if (it == null) it = Iterator()
+        val changes: MutableList<Change> = ArrayList()
+        val totalBytes = bytes.size
         while (it.offset < totalBytes) {
             if (bytes[it.offset] == SPEC.TYPE_ID) {
-                it.offset += 2;
+                it.offset += 2
             }
-            boolean isNil = Decoder.nilCheck(bytes, it);
-            if (isNil) it.offset++;
-            int index = bytes[it.offset++];
-            if (index == SPEC.END_OF_STRUCTURE) {
-                break;
+            val isNil = Decoder.nilCheck(bytes, it)
+            if (isNil) it.offset++
+            val index = bytes[it.offset++].toInt()
+            if (index == SPEC.END_OF_STRUCTURE.toInt()) {
+                break
             }
             // Schema version mismatch (backwards compatibility)
-            if (!fieldsByIndex.containsKey(index)) continue;
-            String field = fieldsByIndex.get(index);
-            Class<?> fieldType = fieldTypes.get(field);
-            String fieldTypeName = fieldTypeNames.get(field);
-//            Class<?> childType = fieldChildTypes.get(field);
-
-            String childPrimitiveType = fieldChildTypeNames.get(field);
-//            Object change = null;
-            Object value;
-            boolean hasChange;
+            if (!fieldsByIndex.containsKey(index)) continue
+            val field = fieldsByIndex[index]
+            val fieldType = fieldTypes[field]!!
+            val fieldTypeName = fieldTypeNames[field]
+            //            Class<?> childType = fieldChildTypes.get(field);
+            val childPrimitiveType = fieldChildTypeNames[field]
+            //            Object change = null;
+            var value: Any?
+            var hasChange: Boolean
             if (isNil) {
-                value = null;
-                hasChange = true;
+                value = null
+                hasChange = true
             } else {
-                switch (fieldTypeName) {
-                    case "ref":
+                when (fieldTypeName) {
+                    "ref" -> {
                         // child schema type
 //                        if (Decoder.nilCheck(bytes, it)) {
 //                            it.offset++;
 //                            value = null;
 //                        } else {
-                        value = thiz(field);
+                        value = thiz(field)
                         if (value == null) {
-                            value = createTypeInstance(bytes, it, fieldType);
+                            value = createTypeInstance(bytes, it, fieldType)
                         }
-                        ((Schema) value).decode(bytes, it);
-//                        }
+                        (value as Schema?)!!.decode(bytes, it)
+                        //                        }
+                        hasChange = true
+                    }
+                    "array" -> {
 
-                        hasChange = true;
-                        break;
-                    case "array": {
 //                        change = new ArrayList<>();
-
-                        ArraySchema valueRef = (ArraySchema) thiz(field);
-                        ArraySchema currentValue = valueRef._clone();
-
-                        int newLength = (int) Decoder.decodeNumber(bytes, it);
-                        int numChanges = Math.min((int) Decoder.decodeNumber(bytes, it), newLength);
-                        boolean hasRemoval = currentValue.count() > newLength;
-                        hasChange = numChanges > 0 || hasRemoval;
-                        boolean hasIndexChange = false;
+                        val valueRef = thiz(field) as ArraySchema<Any>
+                        val currentValue = valueRef._clone()
+                        val newLength = Decoder.decodeNumber(bytes, it).toInt()
+                        val numChanges = Math.min(Decoder.decodeNumber(bytes, it).toInt(), newLength)
+                        val hasRemoval = currentValue.count() > newLength
+                        hasChange = numChanges > 0 || hasRemoval
+                        var hasIndexChange = false
 
                         // ensure current array has the same length as encoded one
                         if (hasRemoval) {
-                            List removeList = new ArrayList();
-                            List items = currentValue;
-                            for (int i = newLength, l = currentValue.count(); i < l; i++) {
-                                Object item = items.get(i);
-                                if (item instanceof Schema && ((Schema) item).onRemove != null) {
-                                    ((Schema) item).onRemove.onRemove();
+                            val removeList: MutableList<Any?> = ArrayList<Any?>()
+                            val items: ArraySchema<Any> = currentValue
+                            var i = newLength
+                            val l = currentValue.count()
+                            while (i < l) {
+                                val item: Any = items[i]!!
+                                if (item is Schema) {
+                                    item.onRemove?.invoke()
                                 }
-                                removeList.add(item);
-                                currentValue.invokeOnRemove(item, i);
+                                removeList.add(item)
+                                currentValue.invokeOnRemove(item, i)
+                                i++
                             }
-                            for (Object item : removeList) {
-                                items.remove(item);
+                            for (item in removeList) {
+                                items.remove(item)
                             }
                             // reduce items length
 //                            ArrayList newItems = new ArrayList();
@@ -367,33 +264,28 @@ public class Schema {
 //                            }
 //                            currentValue.items = newItems;
                         }
-
-                        for (int i = 0; i < numChanges; i++) {
-                            int newIndex = (int) Decoder.decodeNumber(bytes, it);
-
-                            int indexChangedFrom = -1;
+                        var i = 0
+                        while (i < numChanges) {
+                            val newIndex = Decoder.decodeNumber(bytes, it).toInt()
+                            var indexChangedFrom = -1
                             if (Decoder.indexChangeCheck(bytes, it)) {
-                                Decoder.decodeUint8(bytes, it);
-                                indexChangedFrom = (int) Decoder.decodeNumber(bytes, it);
-                                hasIndexChange = true;
+                                Decoder.decodeUint8(bytes, it)
+                                indexChangedFrom = Decoder.decodeNumber(bytes, it).toInt()
+                                hasIndexChange = true
                             }
-
-                            boolean isNew = (!hasIndexChange && !currentValue.containsKeys(newIndex)) || (hasIndexChange && indexChangedFrom != -1);
-
+                            var isNew = !hasIndexChange && !currentValue.containsKeys(newIndex) || hasIndexChange && indexChangedFrom != -1
                             if (currentValue.hasSchemaChild()) {
-                                Schema item;
-
-                                if (isNew) {
-                                    item = (Schema) createTypeInstance(bytes, it, currentValue.getChildType());
+                                var item: Schema?
+                                item = if (isNew) {
+                                    createTypeInstance(bytes, it, currentValue.getChildType()) as Schema
                                 } else if (indexChangedFrom != -1) {
-                                    item = (Schema) valueRef.get(indexChangedFrom);
+                                    valueRef[indexChangedFrom] as Schema?
                                 } else {
-                                    item = (Schema) valueRef.get(newIndex);
+                                    valueRef[newIndex] as Schema?
                                 }
-
                                 if (item == null) {
-                                    item = (Schema) createTypeInstance(bytes, it, currentValue.getChildType());
-                                    isNew = true;
+                                    item = createTypeInstance(bytes, it, currentValue.getChildType()) as Schema
+                                    isNew = true
                                 }
 
 //                                if (Decoder.nilCheck(bytes, it)) {
@@ -402,222 +294,231 @@ public class Schema {
 //                                    valueRef.invokeOnRemove(item, newIndex);
 //                                    continue;
 //                                }
-
-                                item.decode(bytes, it);
-                                currentValue._set(newIndex, item);
+                                item!!.decode(bytes, it)
+                                currentValue._set(newIndex, item)
                             } else {
-                                currentValue._set(newIndex, Decoder.decodePrimitiveType(childPrimitiveType, bytes, it));
+                                currentValue._set(newIndex, Decoder.decodePrimitiveType(childPrimitiveType, bytes, it))
                             }
-
                             if (isNew) {
-                                currentValue.invokeOnAdd(currentValue.get(newIndex), newIndex);
+                                currentValue.invokeOnAdd(currentValue[newIndex]!!, newIndex)
                             } else {
-                                currentValue.invokeOnChange(currentValue.get(newIndex), newIndex);
+                                currentValue.invokeOnChange(currentValue[newIndex]!!, newIndex)
                             }
-
-//                            ((ArrayList) change).add(currentValue.get(newIndex));
+                            i++
                         }
-                        value = currentValue;
-                        break;
+                        value = currentValue
                     }
-                    case "map": {
-                        MapSchema valueRef = (MapSchema) thiz(field);
-                        MapSchema currentValue = valueRef._clone();
-                        int length = (int) Decoder.decodeNumber(bytes, it);
-                        hasChange = length > 0;
-
-                        boolean hasIndexChange = false;
-
-                        Map items = currentValue;
-                        Object[] keys = items.keySet().toArray();
-                        String[] mapKeys = new String[items.size()];
-                        for (int i = 0; i < keys.length; i++) {
-                            mapKeys[i] = (String) keys[i];
+                    "map" -> {
+                        val valueRef: MapSchema<Any> = thiz(field) as MapSchema<Any>
+                        val currentValue = valueRef._clone()
+                        val length = Decoder.decodeNumber(bytes, it).toInt()
+                        hasChange = length > 0
+                        var hasIndexChange = false
+                        val items: MapSchema<Any> = currentValue
+                        val keys: Array<Any> = items.keys.toTypedArray() as Array<Any>
+                        val mapKeys = arrayOfNulls<String>(items.size)
+                        run {
+                            var i = 0
+                            while (i < keys.size) {
+                                mapKeys[i] = keys[i] as String
+                                i++
+                            }
                         }
+                        var i = 0
+                        while (i < length) {
 
-                        for (int i = 0; i < length; i++) {
                             // `encodeAll` may indicate a higher number of indexes it actually encodes
                             // TODO: do not encode a higher number than actual encoded entries
-                            if (it.offset > bytes.length || bytes[it.offset] == SPEC.END_OF_STRUCTURE) {
-                                break;
+                            if (it.offset > bytes.size || bytes[it.offset] == SPEC.END_OF_STRUCTURE) {
+                                break
                             }
-
-                            boolean isNilItem = Decoder.nilCheck(bytes, it);
-                            if (isNilItem) it.offset++;
-
-                            String previousKey = null;
+                            val isNilItem = Decoder.nilCheck(bytes, it)
+                            if (isNilItem) it.offset++
+                            var previousKey: String? = null
                             if (Decoder.indexChangeCheck(bytes, it)) {
-                                it.offset++;
-                                previousKey = mapKeys[(int) Decoder.decodeNumber(bytes, it)];
-                                hasIndexChange = true;
+                                it.offset++
+                                previousKey = mapKeys[Decoder.decodeNumber(bytes, it).toInt()]
+                                hasIndexChange = true
                             }
-
-                            boolean hasMapIndex = Decoder.numberCheck(bytes, it);
-                            boolean isSchemaType = currentValue.hasSchemaChild();
-
-                            String newKey = (hasMapIndex)
-                                    ? mapKeys[(int) Decoder.decodeNumber(bytes, it)]
-                                    : Decoder.decodeString(bytes, it);
-
-                            Object item;
-                            boolean isNew = (!hasIndexChange && !valueRef.containsKey(newKey)) || (hasIndexChange && previousKey == null && hasMapIndex);
-
-                            if (isNew && isSchemaType) {
-                                item = createTypeInstance(bytes, it, currentValue.getChildType());
+                            val hasMapIndex = Decoder.numberCheck(bytes, it)
+                            val isSchemaType = currentValue.hasSchemaChild()
+                            val newKey: String = if (hasMapIndex) mapKeys[Decoder.decodeNumber(bytes, it).toInt()]!! else Decoder.decodeString(bytes, it)
+                            var item: Any?
+                            val isNew = !hasIndexChange && !valueRef.containsKey(newKey) || hasIndexChange && previousKey == null && hasMapIndex
+                            item = if (isNew && isSchemaType) {
+                                createTypeInstance(bytes, it, currentValue.getChildType())
                             } else if (previousKey != null) {
-                                item = valueRef.get(previousKey);
+                                valueRef[previousKey]
                             } else {
-                                item = valueRef.get(newKey);
+                                valueRef[newKey]
                             }
-
                             if (isNilItem) {
-
-                                if (item instanceof Schema && ((Schema) item).onRemove != null) {
-                                    ((Schema) item).onRemove.onRemove();
+                                if (item is Schema && item.onRemove != null) {
+                                    item.onRemove?.invoke()
                                 }
-
-                                valueRef.invokeOnRemove(item, newKey);
-                                items.remove(newKey);
-                                continue;
-
+                                valueRef.invokeOnRemove(item!!, newKey)
+                                items.remove(newKey)
+                                i++
+                                continue
                             } else if (!isSchemaType) {
-                                currentValue.put(newKey, Decoder.decodePrimitiveType(childPrimitiveType, bytes, it));
+                                currentValue[newKey] = Decoder.decodePrimitiveType(childPrimitiveType, bytes, it)
                             } else {
-                                ((Schema) item).decode(bytes, it);
-                                currentValue.put(newKey, item);
+                                (item as Schema?)!!.decode(bytes, it)
+                                currentValue[newKey] = item as Any
                             }
-
                             if (isNew) {
-                                currentValue.invokeOnAdd(currentValue.get(newKey), newKey);
+                                currentValue.invokeOnAdd(currentValue[newKey]!!, newKey)
                             } else {
-                                currentValue.invokeOnChange(currentValue.get(newKey), newKey);
+                                currentValue.invokeOnChange(currentValue[newKey]!!, newKey)
                             }
+                            i++
                         }
-                        value = currentValue;
-                        break;
+                        value = currentValue
                     }
-                    default:
+                    else -> {
                         // Primitive type
-                        value = Decoder.decodePrimitiveType(fieldTypeName, bytes, it);
-                        hasChange = true;
-                        break;
+                        value = Decoder.decodePrimitiveType(fieldTypeName, bytes, it)
+                        hasChange = true
+                    }
                 }
             }
             if (hasChange) {
-                Change dataChange = new Change();
-                dataChange.field = field;
-                dataChange.value = value;
-                dataChange.previousValue = thiz(field);
-                changes.add(dataChange);
+                val dataChange = Change()
+                dataChange.field = field
+                dataChange.value = value
+                dataChange.previousValue = thiz(field)
+                changes.add(dataChange)
             }
-
-            Field f = getClass().getDeclaredField(field);
-            f.setAccessible(true);
-            f.set(this, value);
+            val f = javaClass.getDeclaredField(field)
+            f.isAccessible = true
+            f[this] = value
         }
-        if (!changes.isEmpty() && onChange != null) {
-            onChange.onChange(changes);
+        if (!changes.isEmpty()) {
+            onChange?.invoke(changes)
         }
     }
 
-    public void triggerAll() {
-        if (onChange == null) return;
+    fun triggerAll() {
+        if (onChange == null) return
         try {
-            List<Change> changes = new ArrayList<>();
-            for (String field : fieldsByIndex.values()) {
-                Object value = thiz(field);
-                if (value != null) {
-                    Change change = new Change();
-                    change.field = field;
-                    change.value = value;
-                    change.previousValue = null;
-                    changes.add(change);
-                }
+            val changes: MutableList<Change> = ArrayList()
+            for (field in fieldsByIndex.values) {
+                val value = thiz(field)
+                val change = Change()
+                change.field = field
+                change.value = value
+                change.previousValue = null
+                changes.add(change)
             }
-            onChange.onChange(changes);
-        } catch (NoSuchFieldException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
+            onChange?.invoke(changes)
+        } catch (e: NoSuchFieldException) {
+            e.printStackTrace()
+        } catch (e: IllegalAccessException) {
+            e.printStackTrace()
         }
     }
 
-    protected Object thiz(String fieldName) throws NoSuchFieldException, IllegalAccessException {
-        Field field = getClass().getDeclaredField(fieldName);
-        field.setAccessible(true);
-        return field.get(this);
+    @Throws(NoSuchFieldException::class, IllegalAccessException::class)
+    protected fun thiz(fieldName: String?): Any? {
+        val field = javaClass.getDeclaredField(fieldName)
+        field.isAccessible = true
+        return field[this]
     }
 
-    protected Object createTypeInstance(byte[] bytes, Iterator it, Class<?> type) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
-        if (bytes[it.offset] == SPEC.TYPE_ID) {
-            it.offset++;
-            int typeId = Decoder.decodeUint8(bytes, it);
-            Type anotherType = Context.getInstance().get(typeId);
-            return anotherType.getClass().getConstructor().newInstance();
+    @Throws(NoSuchMethodException::class, IllegalAccessException::class, InvocationTargetException::class, InstantiationException::class)
+    protected fun createTypeInstance(bytes: ByteArray, it: Iterator, type: Class<*>?): Any {
+        return if (bytes[it.offset] == SPEC.TYPE_ID) {
+            it.offset++
+            val typeId = Decoder.decodeUint8(bytes, it).toInt()
+            val anotherType = Context.instance[typeId]
+            anotherType!!.javaClass.getConstructor().newInstance()
         } else {
-            Constructor constructor = type.getDeclaredConstructor();
-            constructor.setAccessible(true);
-            return constructor.newInstance();
+            val constructor = type!!.getDeclaredConstructor()
+            constructor.isAccessible = true
+            constructor.newInstance()
         }
     }
 
     @SchemaClass
-    public static class SchemaReflectionField extends Schema {
+    class SchemaReflectionField : Schema() {
         @SchemaField("0/string")
-        public String name;
+        var name: String? = null
 
         @SchemaField("1/string")
-        public String type;
+        var type: String? = null
 
         @SchemaField("2/uint8")
-        public int referencedType;
+        var referencedType = 0
     }
 
     @SchemaClass
-    public static class SchemaReflectionType extends Schema {
+    class SchemaReflectionType : Schema() {
         @SchemaField("0/uint8")
-        public int id;
+        var id = 0
 
         @SchemaField("1/array/SchemaReflectionField")
-        public ArraySchema<SchemaReflectionField> fields = new ArraySchema<>(SchemaReflectionField.class);
-
-        public Class<?> type;
+        var fields = ArraySchema(SchemaReflectionField::class.java)
+        var type: Type? = null
     }
 
     @SchemaClass
-    public static class SchemaReflection extends Schema {
+    class SchemaReflection : Schema() {
         @SchemaField("0/array/SchemaReflectionType")
-        public ArraySchema<SchemaReflectionType> types = new ArraySchema<>(SchemaReflectionType.class);
+        var types = ArraySchema(SchemaReflectionType::class.java)
 
         @SchemaField("1/uint8")
-        public int rootType;
+        var rootType = 0
     }
 
-    public static class Context {
-        protected static Context instance = new Context();
-        protected LinkedHashMap<Integer, Type> typeIds = new LinkedHashMap<>();
-
-        public static Context getInstance() {
-            return instance;
+    class Context {
+        protected var typeIds = LinkedHashMap<Int, Type>()
+        operator fun get(typeid: Int): Type? {
+            return typeIds[typeid]
         }
 
-        public Type get(int typeid) {
-            return typeIds.get(typeid);
+        fun setTypeId(type: Type, typeid: Int) {
+            typeIds[typeid] = type
         }
 
-        public void setTypeId(Type type, Integer typeid) {
-            typeIds.put(typeid, type);
+        companion object {
+            var instance = Context()
+                protected set
         }
     }
 
-    public static class SPEC {
-        public static final byte END_OF_STRUCTURE = (byte) 193;
-        public static final byte NIL = (byte) 192;
-        public static final byte INDEX_CHANGE = (byte) 212;
-        public static final byte TYPE_ID = (byte) 213;
+    object SPEC {
+        const val END_OF_STRUCTURE = 193.toByte()
+        const val NIL = 192.toByte()
+        const val INDEX_CHANGE = 212.toByte()
+        const val TYPE_ID = 213.toByte()
     }
 
-    public Schema _clone() {
-        return this;
+    fun _clone(): Schema {
+        return this
+    }
+
+    init {
+        if (javaClass.isAnnotationPresent(SchemaClass::class.java)) {
+            for (field in javaClass.declaredFields) {
+                if (!field.isAnnotationPresent(SchemaField::class.java)) continue
+                val fieldName = field.name
+                val fieldType = field.type
+                val annotation = field.getAnnotation(SchemaField::class.java).value
+                val parts = annotation.split("/").toTypedArray()
+                val fieldIndex = parts[0].toInt()
+                val schemaFieldTypeName = parts[1]
+                //                String javaFieldTypeName = fieldType.getCanonicalName();
+
+//                System.out.println(fieldIndex + " " + fieldName + " " + schemaFieldTypeName + " " + javaFieldTypeName);
+                fieldsByIndex[fieldIndex] = fieldName
+                fieldTypeNames[fieldName] = schemaFieldTypeName
+                fieldTypes[fieldName] = fieldType
+                if (schemaFieldTypeName == "array" || schemaFieldTypeName == "map") {
+                    fieldChildTypeNames[fieldName] = parts[2]
+                }
+            }
+        } else if (javaClass != Schema::class.java) {
+            throw Error("$javaClass does not have @SchemaClass annotation")
+        }
     }
 }
