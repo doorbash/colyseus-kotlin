@@ -36,7 +36,7 @@ dependencies {
 
 publish {
     def groupProjectID = 'ir.doorbash'
-    def artifactProjectID = 'colyseus-java'
+    def artifactProjectID = 'colyseus-kotlin'
     def publishVersionID = '2.4.3'
     userOrg = 'doorbash'
     repoName = 'ColyseusJavaClient'
@@ -44,7 +44,7 @@ publish {
     artifactId = artifactProjectID
     publishVersion = publishVersionID
     desc = 'Colyseus Client for Java'
-    website = 'https://github.com/doorbash/colyseus-java'
+    website = 'https://github.com/doorbash/colyseus-kotlin'
 }
 
 task run(dependsOn: classes, type: JavaExec) {
