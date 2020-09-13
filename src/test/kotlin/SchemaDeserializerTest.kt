@@ -2,7 +2,6 @@ import io.colyseus.byteArrayOfInts
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import schema.array_schema_types.ArraySchemaTypes
-import schema.array_schema_types.IAmAChild
 import schema.child_schema_types.ChildSchemaTypes
 import schema.map_schema_types.MapSchemaTypes
 import schema.primitive_types.PrimitiveTypes
