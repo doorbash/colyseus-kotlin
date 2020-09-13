@@ -6,8 +6,7 @@ import schema.child_schema_types.ChildSchemaTypes
 import schema.map_schema_types.MapSchemaTypes
 import schema.primitive_types.PrimitiveTypes
 
-class AppTest {
-
+class SchemaDeserializerTest {
     @Test
     fun `primitive types test`() {
         val state = PrimitiveTypes()
