@@ -1,6 +1,5 @@
 package io.colyseus.serializer.schema
 
-import io.colyseus.serializer.schema.Schema.SPEC
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.charset.StandardCharsets
@@ -129,7 +128,7 @@ object Decoder {
     }
 
     fun decodeString(bytes: ByteArray, it: Iterator): String {
-        val prefix: Int = bytes[it.offset++].toInt() and 0xff
+        val prefix: Int = bytes[it.offset++].toInt() and 0xFF
         var length = 0
         if (prefix < 0xc0) {
             // fixstr
@@ -148,12 +147,8 @@ object Decoder {
         return str
     }
 
-    fun nilCheck(bytes: ByteArray, it: Iterator): Boolean {
-        return bytes[it.offset] == SPEC.NIL
-    }
-
-    fun indexChangeCheck(bytes: ByteArray, it: Iterator): Boolean {
-        return bytes[it.offset] == SPEC.INDEX_CHANGE
+    fun switchStructureCheck(bytes: ByteArray, it: Iterator): Boolean {
+        return bytes[it.offset].toInt() and 0xFF == SPEC.SWITCH_TO_STRUCTURE.value
     }
 
     fun numberCheck(bytes: ByteArray, it: Iterator): Boolean {

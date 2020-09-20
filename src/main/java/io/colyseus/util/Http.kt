@@ -14,10 +14,10 @@ object Http {
     @JvmOverloads
     @Throws(IOException::class, HttpException::class)
     fun request(url: String?, method: String? = "GET", httpHeaders: MutableMap<String, String>? = null, body: String? = null): String {
-//        System.out.println("sending http request to server...");
-//        System.out.println("url is " + url);
-//        System.out.println("http request body is " + body);
-//        System.out.println("http request method is " + method);
+//        System.out.println("sending http request to server...")
+//        System.out.println("url is " + url)
+//        System.out.println("http request body is " + body)
+//        System.out.println("http request method is " + method)
         val con = URL(url).openConnection() as HttpURLConnection
         con.requestMethod = method
         if (httpHeaders != null) {
@@ -34,7 +34,7 @@ object Http {
             os.write(input, 0, input.size)
         }
         val code = con.responseCode
-        //        System.out.println("http response code is " + code);
+        //        System.out.println("http response code is " + code)
         val inputStream: InputStream = if (code != HttpURLConnection.HTTP_OK) con.errorStream else con.inputStream
         val br = BufferedReader(InputStreamReader(inputStream, StandardCharsets.UTF_8))
         val sb = StringBuilder()

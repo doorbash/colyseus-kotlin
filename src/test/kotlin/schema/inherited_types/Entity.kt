@@ -1,14 +1,13 @@
-package schema.map_schema_types
+package schema.inherited_types
 
 import io.colyseus.annotations.SchemaField
 import io.colyseus.default
 import io.colyseus.serializer.schema.Schema
 
-
-class IAmAChild : Schema() {
+open class Entity : Schema() {
     @SchemaField("0/number")
-    public var x: Float = Float.default
+    var x = Float.default
 
     @SchemaField("1/number")
-    public var y: Float = Float.default
+    var y = Float.default
 }

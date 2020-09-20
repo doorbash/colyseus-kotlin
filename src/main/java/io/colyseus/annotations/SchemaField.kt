@@ -1,8 +1,7 @@
 package io.colyseus.annotations
 
-import java.lang.annotation.Retention
-import java.lang.annotation.RetentionPolicy
+import kotlin.reflect.KClass
 
-@Retention(RetentionPolicy.RUNTIME)
+@Retention(AnnotationRetention.RUNTIME)
 @Target(AnnotationTarget.FIELD)
-annotation class SchemaField(val value: String)
+annotation class SchemaField(val v1: String, val v2: KClass<out Any> = Any::class)

@@ -2,18 +2,15 @@ package io.colyseus
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.colyseus.serializer.SchemaSerializer
-import io.colyseus.serializer.schema.Decoder
-import io.colyseus.serializer.schema.Encoder
+import io.colyseus.serializer.schema.*
 import io.colyseus.serializer.schema.Iterator
-import io.colyseus.serializer.schema.Schema
 import org.java_websocket.framing.CloseFrame
 import org.msgpack.jackson.dataformat.MessagePackFactory
-import java.lang.reflect.Type
 import java.net.URI
 import java.net.URISyntaxException
 import java.nio.ByteBuffer
 
-class Room<T : Schema> internal constructor(var type: Class<T>, var name: String) {
+class Room<T : Schema> internal constructor(schema: Class<T>, var name: String) {
 
     public var onLeave: ((code: Int) -> Unit)? = null
     public var onError: ((code: Int, message: String?) -> Unit)? = null
@@ -31,12 +28,12 @@ class Room<T : Schema> internal constructor(var type: Class<T>, var name: String
     private var connection: Connection? = null
 
     private val msgpackMapper = ObjectMapper(MessagePackFactory())
-    private var serializer = SchemaSerializer(type)
-    public val state: T = serializer.state
+    private var serializer = SchemaSerializer(schema)
+    public val state: T = serializer.state as T
 
     @Throws(URISyntaxException::class)
     fun connect(endpoint: String, httpHeaders: Map<String, String>? = null) {
-//        System.out.println("Room is connecting to " + endpoint);
+//        System.out.println("Room is connecting to " + endpoint)
         connection = Connection(URI(endpoint), httpHeaders)
         connection?.onError = { e -> onError?.invoke(-1, e.message) }
         connection?.onClose = { code, reason, _ ->
@@ -58,11 +55,11 @@ class Room<T : Schema> internal constructor(var type: Class<T>, var name: String
 
     private fun parseMessage(bytes: ByteArray) {
         try {
-            val code = bytes[0].toInt()
+            val code = bytes[0].toInt() and 0xFF
             when (code) {
                 Protocol.JOIN_ROOM -> {
                     var offset = 1
-                    val serializerId = String(bytes, offset + 1, bytes[offset].toInt())
+                    val serializerId = String(bytes, offset + 1, bytes[offset].toInt() and 0xFF)
                     offset += serializerId.length + 1
                     if (serializerId == "fossil-delta") {
                         throw Error("fossil-delta is not supported")
@@ -80,7 +77,7 @@ class Room<T : Schema> internal constructor(var type: Class<T>, var name: String
                     onError?.invoke(errorCode, errorMessage)
                 }
                 Protocol.ROOM_DATA_SCHEMA -> {
-                    val messageType: Class<*> = Schema.Context.instance.get(bytes[1].toInt()) as Class<*>
+                    val messageType: Class<*> = Context.instance.get(bytes[1].toInt() and 0xFF) as Class<*>
                     val message = messageType.getConstructor().newInstance() as Schema
                     message.decode(bytes, Iterator(2))
                     val messageHandler = onMessageHandlers["s" + messageType.typeName]
@@ -111,7 +108,7 @@ class Room<T : Schema> internal constructor(var type: Class<T>, var name: String
                             )
                         }
                     } else {
-                        println("No handler for type $type")
+                        println("No handler for type $type" + if (type is Int) " (${Context.instance.get(type)?.simpleName})" else "")
                     }
                 }
             }
@@ -152,7 +149,7 @@ class Room<T : Schema> internal constructor(var type: Class<T>, var name: String
     public fun send(type: String) {
         val encodedType: ByteArray = type.toByteArray()
         val initialBytes: ByteArray = Encoder.getInitialBytesFromEncodedType(encodedType)
-        connection?.send(initialBytes + encodedType);
+        connection?.send(initialBytes + encodedType)
     }
 
     // Send a message by string type with payload
@@ -178,7 +175,7 @@ class Room<T : Schema> internal constructor(var type: Class<T>, var name: String
             noinline handler: ((message: MessageType) -> Unit)?,
     ) {
         onMessageHandlers["i$type"] = MessageHandler(
-                MessageType::class.javaClass,
+                MessageType::class.java,
                 handler as ((Any) -> Unit)?
         )
     }
@@ -187,7 +184,7 @@ class Room<T : Schema> internal constructor(var type: Class<T>, var name: String
             noinline handler: ((message: MessageType) -> Unit)?,
     ) {
         onMessageHandlers["s" + MessageType::class.java.name] = MessageHandler(
-                MessageType::class.javaClass,
+                MessageType::class.java,
                 handler as ((Any) -> Unit)?
         )
     }
@@ -199,12 +196,12 @@ class Room<T : Schema> internal constructor(var type: Class<T>, var name: String
     @Throws(Exception::class)
     private fun setState(encodedState: ByteArray, offset: Int = 0) {
         serializer.setState(encodedState, offset)
-        onStateChange?.invoke(serializer.state._clone() as T, true)
+        onStateChange?.invoke(serializer.state as T, true)
     }
 
     @Throws(Exception::class)
     private fun patch(delta: ByteArray, offset: Int = 0) {
         serializer.patch(delta, offset)
-        onStateChange?.invoke(serializer.state, false)
+        onStateChange?.invoke(serializer.state as T, false)
     }
 }

@@ -3,7 +3,6 @@ package io.colyseus
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.colyseus.serializer.schema.Schema
-import io.colyseus.util.Http
 import io.colyseus.util.Http.request
 import java.io.UnsupportedEncodingException
 import java.net.URLEncoder
@@ -25,76 +24,76 @@ class Client(private val endpoint: String) {
     )
 
     public suspend fun <T : Schema> joinOrCreate(
+            schema: Class<T>,
             roomName: String,
-            rootSchema: Class<T>,
             options: LinkedHashMap<String, Any>? = null,
             httpHeaders: MutableMap<String, String>? = null,
             wsHeaders: Map<String, String>? = null,
     ): Room<T> {
         return createMatchMakeRequest(
+                schema,
                 "joinOrCreate",
                 roomName,
                 options,
-                rootSchema,
                 httpHeaders,
                 wsHeaders,
         )
     }
 
     public suspend fun <T : Schema> create(
+            schema: Class<T>,
             roomName: String,
-            rootSchema: Class<T>,
             options: LinkedHashMap<String, Any>? = null,
             httpHeaders: MutableMap<String, String>? = null,
             wsHeaders: Map<String, String>? = null,
     ): Room<T> {
         return createMatchMakeRequest(
+                schema,
                 "create",
                 roomName,
                 options,
-                rootSchema,
                 httpHeaders,
                 wsHeaders,
         )
     }
 
     public suspend fun <T : Schema> join(
+            schema: Class<T>,
             roomName: String,
-            rootSchema: Class<T>,
             options: LinkedHashMap<String, Any>? = null,
             httpHeaders: MutableMap<String, String>? = null,
             wsHeaders: Map<String, String>? = null,
     ): Room<T> {
         return createMatchMakeRequest(
+                schema,
                 "join",
                 roomName,
                 options,
-                rootSchema,
                 httpHeaders,
                 wsHeaders,
         )
     }
 
     public suspend fun <T : Schema> joinById(
+            schema: Class<T>,
             roomId: String,
-            rootSchema: Class<T>,
             options: LinkedHashMap<String, Any>? = null,
             httpHeaders: MutableMap<String, String>? = null,
             wsHeaders: Map<String, String>? = null,
     ): Room<T> {
         return createMatchMakeRequest(
+                schema,
                 "joinById",
                 roomId,
                 options,
-                rootSchema,
                 httpHeaders,
                 wsHeaders,
         )
     }
 
     public suspend fun <T : Schema> reconnect(
+            schema: Class<T>,
             roomId: String,
-            rootSchema: Class<T>,
             sessionId: String,
             httpHeaders: MutableMap<String, String>? = null,
             wsHeaders: Map<String, String>? = null,
@@ -102,10 +101,10 @@ class Client(private val endpoint: String) {
         val options = LinkedHashMap<String, Any>()
         options["sessionId"] = sessionId
         return createMatchMakeRequest(
+                schema,
                 "joinById",
                 roomId,
                 options,
-                rootSchema,
                 httpHeaders,
                 wsHeaders
         )
@@ -122,8 +121,10 @@ class Client(private val endpoint: String) {
     }
 
     private suspend fun <T : Schema> createMatchMakeRequest(
-            method: String, roomName: String, options: LinkedHashMap<String, Any>? = null,
-            rootType: Class<T>,
+            schema: Class<T>,
+            method: String,
+            roomName: String,
+            options: LinkedHashMap<String, Any>? = null,
             httpHeaders: MutableMap<String, String>? = null,
             wsHeaders: Map<String, String>? = null,
     ): Room<T> {
@@ -148,7 +149,7 @@ class Client(private val endpoint: String) {
                 if (response.has("error")) {
                     throw MatchMakeException(response["error"].asText(), response["code"].asInt())
                 }
-                val room: Room<T> = Room(rootType, roomName)
+                val room = Room(schema, roomName)
                 val roomId = response["room"]["roomId"].asText()
                 room.id = roomId
                 val sessionId = response["sessionId"].asText()
@@ -164,7 +165,7 @@ class Client(private val endpoint: String) {
                 val wsOptions = LinkedHashMap<String, Any?>()
                 wsOptions["sessionId"] = room.sessionId
                 val wsUrl = buildEndpoint(response["room"], wsOptions)
-                //            System.out.println("ws url is " + wsUrl);
+                //            System.out.println("ws url is " + wsUrl)
                 room.connect(wsUrl, wsHeaders)
             } catch (e: Exception) {
                 cont.resumeWithException(e)
