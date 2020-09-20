@@ -11,7 +11,7 @@ dependencies {
 ```
 
 ## Usage examples
-- [agar-io](https://github.com/doorbash/agar-io) - Agar.io clone game made with colyseus-kotlin and libgdx
+- [agar-io](https://github.com/doorbash/agar-io) - Agar.io clone made with colyseus-kotlin and libgdx
 
 ## License
 
