@@ -120,6 +120,7 @@ state.primitives.onChange = { changes ->
         }
     }
 }
+
 state.players.onAdd = { player: Player?, key: Int? ->
     println("player added: " + key + "  " + player?.x)
 }
@@ -129,19 +130,19 @@ state.players.onRemove = { player: Player?, key: Int? ->
 }
 
 /* Message Listeners */
-//set listener by message type
+//Set listener by message type
 onMessage("hi") { cells: MapSchema<Cell> ->
     println("cells size is ${cells.size}")
     println(cells)
 }
 
-// set listener by type
+// Set listener by type
 onMessage { primitives: PrimitivesTest ->
     println("some primitives...")
     println(primitives._string)
 }
 
-// set listener by type id
+// Set listener by type id
 onMessage(2) { cell: Cell ->
     println("handler for type 2")
     println(cell.x)
