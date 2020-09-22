@@ -38,28 +38,25 @@ class SchemaSerializer<T : Schema>(val schema: Class<T>) {
             val reflection = SchemaReflection()
             reflection.decode(bytes!!, Iterator(offset))
             Context.instance.clear()
-            initTypes(reflection, schema = state)
+            initTypes(reflection, schema = schema as Class<Any>)
             for (rt in reflection.types) {
                 Context.instance.setTypeId(rt?.type!!, rt.id)
             }
         }
     }
 
-    private fun initTypes(reflection: SchemaReflection, index: Int = reflection.rootType, schema: Any) {
+    private fun initTypes(reflection: SchemaReflection, index: Int = reflection.rootType, schema: Class<out Any>) {
         val currentType: SchemaReflectionType? = reflection.types[index]
-        currentType?.type = when (schema) {
-            is ArraySchema<*> -> schema.ct
-            is MapSchema<*> -> schema.ct
-            else -> schema::class.java
-        }
+        currentType?.type = schema
         for (f in currentType?.fields!!) {
             if (f?.type in arrayOf("ref", "array", "map")) {
-                for (field in schema::class.java.allFields) {
+                for (field in schema.allFields) {
                     if (!field.isAnnotationPresent(SchemaField::class.java)) continue
                     field.isAccessible = true
                     if (field.name == f?.name) {
-                        var value = field.get(schema)
-                        initTypes(reflection, f?.referencedType!!, value)
+                        val v2 = field.getAnnotation(SchemaField::class.java).v2
+                        if(v2 == Any::class) throw Exception("Scheam error at: ${schema.simpleName}.${field.name}")
+                        initTypes(reflection, f?.referencedType!!, v2.java)
                         break
                     }
                 }
