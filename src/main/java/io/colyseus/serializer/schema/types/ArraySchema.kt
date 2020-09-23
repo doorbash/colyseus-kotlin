@@ -66,6 +66,7 @@ class ArraySchema<T : Any?>(
     public override fun _clear(refs: ReferenceTracker?) {
         if (refs != null && hasSchemaChild()) {
             for (item in this) {
+                if (item == null) continue
                 refs.remove((item as Schema).__refId)
             }
         }
