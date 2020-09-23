@@ -168,7 +168,7 @@ send(3)
 
 ## Usage examples
 
-- [hexy-io](https://github.com/doorbash/hexy-io) - MMO game made with Libgdx
+- [hexy](https://github.com/doorbash/hexy) - MMO game made with Libgdx
 - [agar-io](https://github.com/doorbash/agar-io) - A simple agar.io clone made with Libgdx
 
 ## License
