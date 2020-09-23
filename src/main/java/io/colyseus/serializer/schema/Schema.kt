@@ -49,16 +49,12 @@ public enum class OPERATION(val value: Int) {
 }
 
 class DataChange(
-        var Op: Int = 0,
-        var Field: String? = null,
-        var DynamicIndex: Any? = null,
-        var Value: Any? = null,
-        var PreviousValue: Any? = null,
+        var op: Int = 0,
+        var field: String? = null,
+        var dynamicIndex: Any? = null,
+        var value: Any? = null,
+        var previousValue: Any? = null,
 )
-
-//    public delegate void OnChangeEventHandler(List<DataChange> changes)
-//    public delegate void KeyValueEventHandler<T, K>(T value, K key)
-//    public delegate void OnRemoveEventHandler()
 
 public interface ISchemaCollection {
     fun moveEventHandlers(previousInstance: ISchemaCollection)
@@ -109,7 +105,7 @@ open class Schema : IRef {
     val fieldChildTypes = HashMap<String, Class<*>?>()
 
     @JsonIgnore
-    var onChange: ((changes: List<DataChange?>?) -> Unit)? = null
+    var onChange: ((changes: List<DataChange?>) -> Unit)? = null
 
     @JsonIgnore
     var onRemove: (() -> Unit)? = null
@@ -194,7 +190,8 @@ open class Schema : IRef {
                 // Trying to access a reference that haven't been decoded yet.
                 //
                 if (_ref == null) {
-                    throw Exception("refId not found: $refId") }
+                    throw Exception("refId not found: $refId")
+                }
 
                 // create empty list of changes for this refId.
                 changes = arrayListOf()
@@ -360,10 +357,10 @@ open class Schema : IRef {
 
                         for (key in keys) {
                             deletes.add(DataChange(
-                                    DynamicIndex = key,
-                                    Op = OPERATION.DELETE.value,
-                                    Value = null,
-                                    PreviousValue = previousValue._get(key)
+                                    dynamicIndex = key,
+                                    op = OPERATION.DELETE.value,
+                                    value = null,
+                                    previousValue = previousValue._get(key)
                             ))
                         }
 
@@ -392,11 +389,11 @@ open class Schema : IRef {
 
             if (hasChange) {
                 changes.add(DataChange(
-                        Op = operation,
-                        Field = fieldName,
-                        DynamicIndex = dynamicIndex,
-                        Value = value,
-                        PreviousValue = previousValue
+                        op = operation,
+                        field = fieldName,
+                        dynamicIndex = dynamicIndex,
+                        value = value,
+                        previousValue = previousValue
                 ))
             }
         }
@@ -417,7 +414,8 @@ open class Schema : IRef {
     protected fun triggerAllFillChanges(currentRef: IRef, allChanges: HashMap<Any, Any>) {
         // skip recursive structures...
         if (allChanges.contains(currentRef.__refId)) {
-            return }
+            return
+        }
 
         var changes = arrayListOf<DataChange>()
         allChanges[currentRef.__refId as Any] = changes
@@ -426,9 +424,9 @@ open class Schema : IRef {
             for (fieldName in currentRef.fieldsByIndex.values) {
                 val value = currentRef[fieldName!!]
                 changes.add(DataChange(
-                        Field = fieldName,
-                        Op = OPERATION.ADD.value,
-                        Value = value
+                        field = fieldName,
+                        op = OPERATION.ADD.value,
+                        value = value
                 ))
 
                 if (value is IRef) {
@@ -443,10 +441,10 @@ open class Schema : IRef {
 
                     changes.add(DataChange
                     (
-                            Field = null,
-                            DynamicIndex = key,
-                            Op = OPERATION.ADD.value,
-                            Value = child
+                            field = null,
+                            dynamicIndex = key,
+                            op = OPERATION.ADD.value,
+                            value = child
                     ))
 
                     triggerAllFillChanges(child as IRef, allChanges)
@@ -468,33 +466,34 @@ open class Schema : IRef {
                 if (!isSchema) {
                     val container = _ref as ISchemaCollection
 
-                    if (change.Op == OPERATION.ADD.value && change.PreviousValue == container.getTypeDefaultValue()) {
-                        container.invokeOnAdd(change.Value!!, change.DynamicIndex!!)
+                    if (change.op == OPERATION.ADD.value && change.previousValue == container.getTypeDefaultValue()) {
+                        container.invokeOnAdd(change.value!!, change.dynamicIndex!!)
 
-                    } else if (change.Op == OPERATION.DELETE.value) {
+                    } else if (change.op == OPERATION.DELETE.value) {
                         //
                         // FIXME: `previousValue` should always be avaiiable.
                         // ADD + DELETE operations are still encoding DELETE operation.
                         //
-                        if (change.PreviousValue != container.getTypeDefaultValue()) {
-                            container.invokeOnRemove(change.PreviousValue!!, change.DynamicIndex ?: change.Field!!)
+                        if (change.previousValue != container.getTypeDefaultValue()) {
+                            container.invokeOnRemove(change.previousValue!!, change.dynamicIndex
+                                    ?: change.field!!)
                         }
-                    } else if (change.Op == OPERATION.DELETE_AND_ADD.value) {
-                        if (change.PreviousValue != container.getTypeDefaultValue()) {
-                            container.invokeOnRemove(change.PreviousValue!!, change.DynamicIndex!!)
+                    } else if (change.op == OPERATION.DELETE_AND_ADD.value) {
+                        if (change.previousValue != container.getTypeDefaultValue()) {
+                            container.invokeOnRemove(change.previousValue!!, change.dynamicIndex!!)
                         }
-                        container.invokeOnAdd(change.Value!!, change.DynamicIndex!!)
+                        container.invokeOnAdd(change.value!!, change.dynamicIndex!!)
 
-                    } else if (change.Op == OPERATION.REPLACE.value || change.Value != change.PreviousValue) {
-                        container.invokeOnChange(change.Value!!, change.DynamicIndex!!)
+                    } else if (change.op == OPERATION.REPLACE.value || change.value != change.previousValue) {
+                        container.invokeOnChange(change.value!!, change.dynamicIndex!!)
                     }
                 }
 
                 //
                 // trigger onRemove on child structure.
                 //
-                if ((change.Op and OPERATION.DELETE.value) == OPERATION.DELETE.value && change.PreviousValue is Schema) {
-                    (change.PreviousValue as Schema).onRemove?.invoke()
+                if ((change.op and OPERATION.DELETE.value) == OPERATION.DELETE.value && change.previousValue is Schema) {
+                    (change.previousValue as Schema).onRemove?.invoke()
                 }
             }
 

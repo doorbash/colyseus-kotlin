@@ -16,13 +16,13 @@ class ArraySchema<T : Any?>(
     constructor() : this(null)
 
     @JsonIgnore
-    var onAdd: ((value: T?, key: Int?) -> Unit)? = null
+    var onAdd: ((value: T, key: Int) -> Unit)? = null
 
     @JsonIgnore
-    var onChange: ((value: T?, key: Int?) -> Unit)? = null
+    var onChange: ((value: T, key: Int) -> Unit)? = null
 
     @JsonIgnore
-    var onRemove: ((value: T?, key: Int?) -> Unit)? = null
+    var onRemove: ((value: T, key: Int) -> Unit)? = null
 
     public override fun hasSchemaChild(): Boolean = (Schema::class.java).isAssignableFrom(ct)
 
@@ -36,7 +36,7 @@ class ArraySchema<T : Any?>(
     }
 
     public override fun setByIndex(index: Int, dynamicIndex: Any, value: Any?) {
-        var ind = dynamicIndex as Int
+        val ind = dynamicIndex as Int
 
         if (ind < 0) return
 
@@ -114,25 +114,26 @@ class ArraySchema<T : Any?>(
             return
         }
         for (i in 0 until size) {
-            onAdd?.invoke(this[i], i)
+            if (this[i] == null) continue
+            onAdd?.invoke(this[i]!!, i)
         }
     }
 
     public override fun moveEventHandlers(previousInstance: ISchemaCollection) {
-        onAdd = (previousInstance as ArraySchema<T>).onAdd
+        onAdd = (previousInstance as ArraySchema<T?>).onAdd
         onChange = previousInstance.onChange
         onRemove = previousInstance.onRemove
     }
 
     override fun invokeOnAdd(item: Any, index: Any) {
-        onAdd?.invoke(item as T?, index as Int)
+        onAdd?.invoke(item as T, index as Int)
     }
 
     override fun invokeOnChange(item: Any, index: Any) {
-        onChange?.invoke(item as T?, index as Int)
+        onChange?.invoke(item as T, index as Int)
     }
 
     override fun invokeOnRemove(item: Any, index: Any) {
-        onRemove?.invoke(item as T?, index as Int)
+        onRemove?.invoke(item as T, index as Int)
     }
 }

@@ -6,7 +6,7 @@ Implementation of Colyseus client using Kotlin
 
 ```groovy
 dependencies {
-    implementation 'io.github.doorbash:colyseus-kotlin:0.14.0-alpha.1'
+    implementation 'io.github.doorbash:colyseus-kotlin:0.14.0-alpha.2'
 }
 ```
 
@@ -114,19 +114,19 @@ onStateChange = { state, isFirstState ->
 
 /* Schema listeners */
 state.primitives.onChange = { changes ->
-    for (change in changes!!) {
+    for (change in changes) {
         with(change!!) {
-            println("$Field: $PreviousValue -> $Value")
+            println("$field: $previousValue -> $value")
         }
     }
 }
 
-state.players.onAdd = { player: Player?, key: Int? ->
-    println("player added: " + key + "  " + player?.x)
+state.players.onAdd = { player: Player, key: Int ->
+    println("player added: " + key + "  " + player.x)
 }
 
-state.players.onRemove = { player: Player?, key: Int? ->
-    println("player removed: " + key + "  " + player?.x)
+state.players.onRemove = { player: Player, key: Int ->
+    println("player removed: " + key + "  " + player.x)
 }
 
 /* Message Listeners */

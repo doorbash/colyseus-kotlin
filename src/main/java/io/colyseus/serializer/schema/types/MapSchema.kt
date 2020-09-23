@@ -10,20 +10,20 @@ import kotlin.collections.set
 
 class MapSchema<T : Any?>(
         @JsonIgnore public var ct: Class<T>?,
-) : LinkedHashMap<String?, T?>(), ISchemaCollection, IRef {
+) : LinkedHashMap<String, T?>(), ISchemaCollection, IRef {
 
     constructor() : this(null)
 
     @JsonIgnore
-    public var onAdd: ((value: T?, key: String) -> Unit)? = null
+    public var onAdd: ((value: T, key: String) -> Unit)? = null
 
     @JsonIgnore
-    public var onChange: ((value: T?, key: String) -> Unit)? = null
+    public var onChange: ((value: T, key: String) -> Unit)? = null
 
     @JsonIgnore
-    public var onRemove: ((value: T?, key: String) -> Unit)? = null
+    public var onRemove: ((value: T, key: String) -> Unit)? = null
 
-    var Indexes = HashMap<Int, String>()
+    var indexes = HashMap<Int, String>()
 
     public override var __refId: Int = 0
     public override var __parent: IRef? = null
@@ -37,21 +37,21 @@ class MapSchema<T : Any?>(
         val dynamicIndex: String? = getIndex(index) as String?
         if (contains(dynamicIndex)) {
             remove(dynamicIndex)
-            Indexes.remove(index)
+            indexes.remove(index)
         }
     }
 
     public override fun setIndex(index: Int, dynamicIndex: Any) {
-        Indexes[index] = dynamicIndex as String
+        indexes[index] = dynamicIndex as String
     }
 
     public override fun setByIndex(index: Int, dynamicIndex: Any, value: Any?) {
-        Indexes[index] = dynamicIndex as String
+        indexes[index] = dynamicIndex as String
         this[dynamicIndex] = value as T?
     }
 
     public override fun getIndex(index: Int): Any? {
-        return Indexes[index]
+        return indexes[index]
     }
 
     public override fun _clone(): ISchemaCollection {
@@ -97,11 +97,12 @@ class MapSchema<T : Any?>(
     public override fun _clear(refs: ReferenceTracker?) {
         if (refs != null && hasSchemaChild()) {
             for (item in values) {
-                refs.remove((item as IRef).__refId!!)
+                if (item == null) continue
+                refs.remove((item as IRef).__refId)
             }
         }
 
-        Indexes.clear()
+        indexes.clear()
         clear()
     }
 
@@ -110,7 +111,7 @@ class MapSchema<T : Any?>(
     }
 
     public fun _remove(item: Pair<String, T>): Boolean {
-        var value: T? = this[item.first]
+        val value: T? = this[item.first]
         if (value != null && value.equals(item.second)) {
             remove(item.first)
             return true
@@ -138,25 +139,26 @@ class MapSchema<T : Any?>(
     public override fun triggerAll() {
         if (onAdd == null) return
         for (item in this) {
-            onAdd?.invoke(item.value as T?, item.key as String)
+            if (item.value == null) continue
+            onAdd?.invoke(item.value as T, item.key)
         }
     }
 
     public override fun moveEventHandlers(previousInstance: ISchemaCollection) {
-        onAdd = (previousInstance as (MapSchema<T>)).onAdd
+        onAdd = (previousInstance as (MapSchema<T?>)).onAdd
         onChange = (previousInstance).onChange
         onRemove = (previousInstance).onRemove
     }
 
     public override fun invokeOnAdd(item: Any, index: Any) {
-        onAdd?.invoke(item as T?, index as String)
+        onAdd?.invoke(item as T, index as String)
     }
 
     public override fun invokeOnChange(item: Any, index: Any) {
-        onChange?.invoke(item as T?, index as String)
+        onChange?.invoke(item as T, index as String)
     }
 
     public override fun invokeOnRemove(item: Any, index: Any) {
-        onRemove?.invoke(item as T?, index as String)
+        onRemove?.invoke(item as T, index as String)
     }
 }
