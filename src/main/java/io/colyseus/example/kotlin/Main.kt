@@ -23,7 +23,7 @@ object Main {
             state.players.onRemove = { player: Player?, key: Int? ->
                 println("player removed: " + key + "  " + player?.x)
 
-                var c = Cell()
+                val c = Cell()
                 c.x = 100f
                 c.y = 200f
                 send(2, c)

@@ -3,6 +3,7 @@ package io.colyseus
 import io.colyseus.serializer.schema.types.ArraySchema
 import io.colyseus.serializer.schema.types.MapSchema
 import java.lang.reflect.Field
+import java.util.concurrent.locks.ReentrantLock
 
 
 internal fun byteArrayOfInts(vararg ints: Int) = ByteArray(ints.size) { pos -> ints[pos].toByte() }
@@ -74,4 +75,16 @@ operator fun Class<*>.get(name: String): Field? {
         if (field.name == name) return field
     }
     return null
+}
+
+class Lock {
+    private val lock = ReentrantLock(true)
+    fun withLock(block: () -> Unit) {
+        try {
+            lock.lock()
+            block()
+        } finally {
+            lock.unlock()
+        }
+    }
 }

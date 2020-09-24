@@ -42,6 +42,7 @@ class Room<T : Schema> internal constructor(schema: Class<T>, var name: String) 
                     reason.startsWith("Invalid status code received: 401")) {
                 onError?.invoke(-1, reason)
             }
+            serializer.teardown()
             onLeave?.invoke(code)
         }
         connection?.onMessage = { buf: ByteBuffer ->
@@ -122,6 +123,7 @@ class Room<T : Schema> internal constructor(schema: Class<T>, var name: String) 
     // Disconnect from the room.
     @JvmOverloads
     fun leave(consented: Boolean = true) {
+        serializer.teardown()
         if (connection != null) {
             if (consented) {
                 connection!!._send(Protocol.LEAVE_ROOM)
@@ -196,12 +198,12 @@ class Room<T : Schema> internal constructor(schema: Class<T>, var name: String) 
     @Throws(Exception::class)
     private fun setState(encodedState: ByteArray, offset: Int = 0) {
         serializer.setState(encodedState, offset)
-        onStateChange?.invoke(serializer.state as T, true)
+        onStateChange?.invoke(serializer.state, true)
     }
 
     @Throws(Exception::class)
     private fun patch(delta: ByteArray, offset: Int = 0) {
         serializer.patch(delta, offset)
-        onStateChange?.invoke(serializer.state as T, false)
+        onStateChange?.invoke(serializer.state, false)
     }
 }
