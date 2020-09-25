@@ -128,11 +128,11 @@ state.primitives.onChange = { changes ->
     }
 }
 
-state.players.onAdd = { player: Player, key: Int ->
+state.players.onAdd = { player, key ->
     println("player added: " + key + "  " + player.x)
 }
 
-state.players.onRemove = { player: Player, key: Int ->
+state.players.onRemove = { player, key ->
     println("player removed: " + key + "  " + player.x)
 }
 
