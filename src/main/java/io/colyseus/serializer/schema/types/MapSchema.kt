@@ -9,7 +9,7 @@ import io.colyseus.serializer.schema.Schema
 import kotlin.collections.set
 
 class MapSchema<T : Any?>(
-        @JsonIgnore public var ct: Class<T>?,
+        @JsonIgnore public var ct: Class<T>?, override var referencedType: Short = -1,
 ) : LinkedHashMap<String, T?>(), ISchemaCollection, IRef {
 
     constructor() : this(null)

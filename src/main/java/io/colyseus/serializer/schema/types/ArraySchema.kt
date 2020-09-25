@@ -10,7 +10,7 @@ import java.util.*
 import kotlin.collections.ArrayList
 
 class ArraySchema<T : Any?>(
-        @JsonIgnore public var ct: Class<T>?,
+        @JsonIgnore public var ct: Class<T>?, override var referencedType: Short = -1,
 ) : ArrayList<T?>(), ISchemaCollection, IRef {
 
     constructor() : this(null)

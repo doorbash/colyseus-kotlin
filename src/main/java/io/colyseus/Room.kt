@@ -10,12 +10,12 @@ import java.net.URI
 import java.net.URISyntaxException
 import java.nio.ByteBuffer
 
-class Room<T : Schema> internal constructor(schema: Class<T>, var name: String) {
+class Room internal constructor(var name: String) {
 
     public var onLeave: ((code: Int) -> Unit)? = null
     public var onError: ((code: Int, message: String?) -> Unit)? = null
     public var onJoin: (() -> Unit)? = null
-    public var onStateChange: ((state: T, isFirstState: Boolean) -> Unit)? = null
+    public var onStateChange: ((state: Schema, isFirstState: Boolean) -> Unit)? = null
     public val onMessageHandlers = hashMapOf<String, MessageHandler<*>>()
 
     class MessageHandler<out K> constructor(
@@ -28,8 +28,9 @@ class Room<T : Schema> internal constructor(schema: Class<T>, var name: String) 
     private var connection: Connection? = null
 
     private val msgpackMapper = ObjectMapper(MessagePackFactory())
-    private var serializer = SchemaSerializer(schema)
-    public val state: T = serializer.state as T
+    private var serializer = SchemaSerializer()
+    public val state
+        get() = serializer.state
 
     @Throws(URISyntaxException::class)
     fun connect(endpoint: String, httpHeaders: Map<String, String>? = null) {
@@ -42,6 +43,7 @@ class Room<T : Schema> internal constructor(schema: Class<T>, var name: String) 
                     reason.startsWith("Invalid status code received: 401")) {
                 onError?.invoke(-1, reason)
             }
+            serializer.teardown()
             onLeave?.invoke(code)
         }
         connection?.onMessage = { buf: ByteBuffer ->
@@ -77,7 +79,7 @@ class Room<T : Schema> internal constructor(schema: Class<T>, var name: String) 
                     onError?.invoke(errorCode, errorMessage)
                 }
                 Protocol.ROOM_DATA_SCHEMA -> {
-                    val messageType: Class<*> = Context.instance.get(bytes[1].toInt() and 0xFF) as Class<*>
+                    val messageType: Class<*> = Schema::class.java
                     val message = messageType.getConstructor().newInstance() as Schema
                     message.decode(bytes, Iterator(2))
                     val messageHandler = onMessageHandlers["s" + messageType.typeName]
@@ -108,7 +110,7 @@ class Room<T : Schema> internal constructor(schema: Class<T>, var name: String) 
                             )
                         }
                     } else {
-                        println("No handler for type $type" + if (type is Int) " (${Context.instance.get(type)?.simpleName})" else "")
+                        println("No handler for type $type")
                     }
                 }
             }
@@ -122,6 +124,7 @@ class Room<T : Schema> internal constructor(schema: Class<T>, var name: String) 
     // Disconnect from the room.
     @JvmOverloads
     fun leave(consented: Boolean = true) {
+        serializer.teardown()
         if (connection != null) {
             if (consented) {
                 connection!!._send(Protocol.LEAVE_ROOM)
@@ -196,12 +199,12 @@ class Room<T : Schema> internal constructor(schema: Class<T>, var name: String) 
     @Throws(Exception::class)
     private fun setState(encodedState: ByteArray, offset: Int = 0) {
         serializer.setState(encodedState, offset)
-        onStateChange?.invoke(serializer.state as T, true)
+        onStateChange?.invoke(serializer.state as Schema, true)
     }
 
     @Throws(Exception::class)
     private fun patch(delta: ByteArray, offset: Int = 0) {
         serializer.patch(delta, offset)
-        onStateChange?.invoke(serializer.state as T, false)
+        onStateChange?.invoke(serializer.state as Schema, false)
     }
 }

@@ -23,15 +23,13 @@ class Client(private val endpoint: String) {
             var metadata: Any? = null,
     )
 
-    public suspend fun <T : Schema> joinOrCreate(
-            schema: Class<T>,
+    public suspend fun joinOrCreate(
             roomName: String,
             options: LinkedHashMap<String, Any>? = null,
             httpHeaders: MutableMap<String, String>? = null,
             wsHeaders: Map<String, String>? = null,
-    ): Room<T> {
+    ): Room {
         return createMatchMakeRequest(
-                schema,
                 "joinOrCreate",
                 roomName,
                 options,
@@ -40,15 +38,13 @@ class Client(private val endpoint: String) {
         )
     }
 
-    public suspend fun <T : Schema> create(
-            schema: Class<T>,
+    public suspend fun create(
             roomName: String,
             options: LinkedHashMap<String, Any>? = null,
             httpHeaders: MutableMap<String, String>? = null,
             wsHeaders: Map<String, String>? = null,
-    ): Room<T> {
+    ): Room {
         return createMatchMakeRequest(
-                schema,
                 "create",
                 roomName,
                 options,
@@ -57,15 +53,13 @@ class Client(private val endpoint: String) {
         )
     }
 
-    public suspend fun <T : Schema> join(
-            schema: Class<T>,
+    public suspend fun join(
             roomName: String,
             options: LinkedHashMap<String, Any>? = null,
             httpHeaders: MutableMap<String, String>? = null,
             wsHeaders: Map<String, String>? = null,
-    ): Room<T> {
+    ): Room {
         return createMatchMakeRequest(
-                schema,
                 "join",
                 roomName,
                 options,
@@ -74,15 +68,13 @@ class Client(private val endpoint: String) {
         )
     }
 
-    public suspend fun <T : Schema> joinById(
-            schema: Class<T>,
+    public suspend fun joinById(
             roomId: String,
             options: LinkedHashMap<String, Any>? = null,
             httpHeaders: MutableMap<String, String>? = null,
             wsHeaders: Map<String, String>? = null,
-    ): Room<T> {
+    ): Room {
         return createMatchMakeRequest(
-                schema,
                 "joinById",
                 roomId,
                 options,
@@ -91,17 +83,15 @@ class Client(private val endpoint: String) {
         )
     }
 
-    public suspend fun <T : Schema> reconnect(
-            schema: Class<T>,
+    public suspend fun reconnect(
             roomId: String,
             sessionId: String,
             httpHeaders: MutableMap<String, String>? = null,
             wsHeaders: Map<String, String>? = null,
-    ): Room<T> {
+    ): Room {
         val options = LinkedHashMap<String, Any>()
         options["sessionId"] = sessionId
         return createMatchMakeRequest(
-                schema,
                 "joinById",
                 roomId,
                 options,
@@ -120,15 +110,14 @@ class Client(private val endpoint: String) {
         return data
     }
 
-    private suspend fun <T : Schema> createMatchMakeRequest(
-            schema: Class<T>,
+    private suspend fun createMatchMakeRequest(
             method: String,
             roomName: String,
             options: LinkedHashMap<String, Any>? = null,
             httpHeaders: MutableMap<String, String>? = null,
             wsHeaders: Map<String, String>? = null,
-    ): Room<T> {
-        return suspendCoroutine { cont: Continuation<Room<T>> ->
+    ): Room {
+        return suspendCoroutine { cont: Continuation<Room> ->
             var headers: MutableMap<String, String>? = httpHeaders
             try {
                 val url = endpoint.replace("ws", "http") +
@@ -149,7 +138,7 @@ class Client(private val endpoint: String) {
                 if (response.has("error")) {
                     throw MatchMakeException(response["error"].asText(), response["code"].asInt())
                 }
-                val room = Room(schema, roomName)
+                val room = Room(roomName)
                 val roomId = response["room"]["roomId"].asText()
                 room.id = roomId
                 val sessionId = response["sessionId"].asText()

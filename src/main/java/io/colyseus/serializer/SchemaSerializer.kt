@@ -1,28 +1,30 @@
 package io.colyseus.serializer
 
-import io.colyseus.allFields
-import io.colyseus.annotations.SchemaField
-import io.colyseus.serializer.schema.Context
+import io.colyseus.Lock
+import io.colyseus.default
+import io.colyseus.getType
+import io.colyseus.isPrimary
 import io.colyseus.serializer.schema.Iterator
 import io.colyseus.serializer.schema.ReferenceTracker
 import io.colyseus.serializer.schema.Schema
 import io.colyseus.serializer.schema.types.ArraySchema
 import io.colyseus.serializer.schema.types.MapSchema
-import io.colyseus.serializer.schema.types.SchemaReflection
-import io.colyseus.serializer.schema.types.SchemaReflectionType
+import io.colyseus.serializer.schema.types.Reflection
+import io.colyseus.serializer.schema.types.Reflection.Companion.schemaReflection
 
-class SchemaSerializer<T : Schema>(val schema: Class<T>) {
-    var state: T = schema.getConstructor().newInstance() as T
+class SchemaSerializer {
+    var state: Schema = Schema()
     var refs = ReferenceTracker()
+    internal val lock = Lock()
 
     fun setState(data: ByteArray, offset: Int = 0) {
-        synchronized(this) {
+        lock.withLock {
             state.decode(data, Iterator(offset), refs)
         }
     }
 
     fun patch(data: ByteArray, offset: Int = 0) {
-        synchronized(this) {
+        lock.withLock {
             state.decode(data, Iterator(offset), refs)
         }
     }
@@ -30,37 +32,36 @@ class SchemaSerializer<T : Schema>(val schema: Class<T>) {
     fun teardown() {
         // Clear all stored references.
         refs.clear()
-        Context.instance.clear()
     }
 
     fun handshake(bytes: ByteArray?, offset: Int = 0) {
-        synchronized(this) {
-            val reflection = SchemaReflection()
+        lock.withLock {
+            val reflection = schemaReflection.clone()
             reflection.decode(bytes!!, Iterator(offset))
-            Context.instance.clear()
-            initTypes(reflection, schema = schema as Class<Any>)
-            for (rt in reflection.types) {
-                Context.instance.setTypeId(rt?.type!!, rt.id)
-            }
+            Reflection.reflectionObject = reflection
+            state = Schema(reflection["rootType"] as Short)
+            initTypes(reflection, schema = state)
         }
     }
 
-    private fun initTypes(reflection: SchemaReflection, index: Int = reflection.rootType, schema: Class<out Any>) {
-        val currentType: SchemaReflectionType? = reflection.types[index]
-        currentType?.type = schema
-        for (f in currentType?.fields!!) {
-            if (f?.type in arrayOf("ref", "array", "map")) {
-                for (field in schema.allFields) {
-                    if (!field.isAnnotationPresent(SchemaField::class.java)) continue
-                    field.isAccessible = true
-                    if (field.name == f?.name) {
-                        val v2 = field.getAnnotation(SchemaField::class.java).v2
-                        if(v2 == Any::class) throw Exception("Scheam error at: ${schema.simpleName}.${field.name}")
-                        initTypes(reflection, f?.referencedType!!, v2.java)
-                        break
-                    }
+    private fun initTypes(reflection: Schema, schema: Schema) {
+        val currentType = (reflection["types"] as ArraySchema<*>)[schema.referencedType.toInt()] as Schema
+//        currentType["type"] = schema
+        for (f in (currentType["fields"] as ArraySchema<*>)) {
+            val fieldType = (f as Schema)["type"] as String
+            if (!isPrimary(fieldType)) {
+                val field = f["name"] as String
+                val rt = f["referencedType"] as Short
+                schema[field] = when (fieldType) {
+                    "array" -> ArraySchema(Schema::class.java)
+                    "map" -> MapSchema(Schema::class.java)
+                    else -> Schema(rt)
                 }
-            }
+                if (schema[field] is Schema)
+                    initTypes(reflection, schema[field] as Schema)
+            }/* else {
+                schema[f["name"] as String] = default(getType(fieldType)!!)
+            }*/
         }
     }
 }

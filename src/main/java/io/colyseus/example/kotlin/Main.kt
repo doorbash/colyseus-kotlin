@@ -10,23 +10,25 @@ object Main {
     @JvmStatic
     fun main(args: Array<String>) = runBlocking {
         val client = Client("ws://localhost:2567")
-        with(client.joinOrCreate(MyState::class.java, "game")) {
+        with(client.joinOrCreate("game")) {
             println("connected to $name")
 
 //            state.onChange = { changes -> println(changes) }
             state.onRemove = { println("state.onRemove") }
 
-            state.players.onAdd = { player: Player?, key: Int? ->
-                println("player added: " + key + "  " + player?.x)
+            (state["players"] as ArraySchema<*>).onAdd = { player: Any?, key: Int ->
+                player as Schema
+                println("player added: " + key + "  " + (player["x"]))
             }
 
-            state.players.onRemove = { player: Player?, key: Int? ->
-                println("player removed: " + key + "  " + player?.x)
+            (state["players"] as ArraySchema<*>).onRemove = { player: Any?, key: Int? ->
+                player as Schema
+                println("player removed: " + key + "  " + player["x"])
 
-                var c = Cell()
-                c.x = 100f
-                c.y = 200f
-                send(2, c)
+                send("mmmmm", Schema().apply {
+                    this["x"] = 100f
+                    this["y"] = 200f
+                })
             }
 
             onLeave = { code -> println("onLeave $code") }
@@ -47,35 +49,48 @@ object Main {
 //                println("xxxxx!!! >> " + message.x)
 //            }
 
-            onMessage { primitives: PrimitivesTest ->
-                println("some primitives...")
-                println(primitives._string)
+            onMessage { primitives: Schema ->
+                println(primitives["_string"])
             }
 
 //            onMessage("hello") { data : Float ->
 //                println(data)
 //            }
 //
-            onMessage("hi") { cells: MapSchema<Cell> ->
+            onMessage("hi") { cells: MapSchema<Schema> ->
                 println("map size is ")
                 println(cells.size)
                 println(cells)
             }
 
-            onMessage("hey") { players: ArraySchema<Player> ->
+            onMessage("hey") { players: ArraySchema<Schema> ->
                 println("player array size is ")
                 println(players.size)
                 println(players)
             }
 
-            onMessage("ahoy") { cell: Cell ->
-                println("""cell.x = ${cell.x} ,cell.y = ${cell.y}""")
+            onMessage("ahoy") { cell: Schema ->
+                println("""cell.x = ${cell["x"]} ,cell.y = ${cell["y"]}""")
             }
 
-            onMessage(2) { cell: Cell ->
+            onMessage("hello") { cell: Schema ->
                 println("handler for type 2")
-                println(" >>>>>>>>>>>>>> " + cell.x)
+                println(" >>>>>>>>>>>>>> " + cell["x"])
             }
+
+
+            // Send message with message type
+            send("fire", Math.random() * 100)
+
+            // Send a schema with type id
+            val c = Schema()
+            c["x"] = 100f
+            c["y"] = 200f
+            send(2, c)
+
+            // Send only the message type or type id
+            send("hello")
+            send(3)
         }
     }
 }

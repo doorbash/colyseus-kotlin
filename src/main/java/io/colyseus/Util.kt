@@ -1,9 +1,9 @@
 package io.colyseus
 
+import io.colyseus.serializer.schema.Schema
 import io.colyseus.serializer.schema.types.ArraySchema
 import io.colyseus.serializer.schema.types.MapSchema
-import java.lang.reflect.Field
-
+import java.util.concurrent.locks.ReentrantLock
 
 internal fun byteArrayOfInts(vararg ints: Int) = ByteArray(ints.size) { pos -> ints[pos].toByte() }
 internal operator fun ByteArray.get(intRange: IntRange): ByteArray = copyOfRange(intRange.first, intRange.last)
@@ -53,25 +53,18 @@ fun getType(type: String): Class<*>? {
         "boolean" -> Boolean::class.java
         "map" -> MapSchema::class.java
         "array" -> ArraySchema::class.java
-        else -> null
+        else -> Schema::class.java
     }
 }
 
-val Class<*>.allFields: List<Field>
-    get() {
-        val allFields = mutableListOf<Field>()
-        var currentClass = this as Class<*>?
-        while (currentClass != null) {
-            val declaredFields: Array<Field> = currentClass.declaredFields
-            allFields.addAll(declaredFields)
-            currentClass = currentClass.superclass
+internal class Lock {
+    private val lock = ReentrantLock(true)
+    fun withLock(block: () -> Unit) {
+        try {
+            lock.lock()
+            block()
+        } finally {
+            lock.unlock()
         }
-        return allFields
     }
-
-operator fun Class<*>.get(name: String): Field? {
-    for (field in allFields) {
-        if (field.name == name) return field
-    }
-    return null
 }

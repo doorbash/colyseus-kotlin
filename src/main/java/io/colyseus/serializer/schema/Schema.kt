@@ -1,15 +1,20 @@
 package io.colyseus.serializer.schema
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import io.colyseus.allFields
-
-import io.colyseus.annotations.SchemaField
-import io.colyseus.get
 import io.colyseus.getType
 import io.colyseus.isPrimary
 import io.colyseus.serializer.schema.SPEC.SWITCH_TO_STRUCTURE
 import io.colyseus.serializer.schema.types.ArraySchema
 import io.colyseus.serializer.schema.types.MapSchema
+import io.colyseus.serializer.schema.types.Reflection
+import kotlin.collections.HashMap
+import kotlin.collections.List
+import kotlin.collections.MutableSet
+import kotlin.collections.arrayListOf
+import kotlin.collections.contains
+import kotlin.collections.get
+import kotlin.collections.hashMapOf
+import kotlin.collections.set
 
 
 /*
@@ -89,6 +94,7 @@ public interface ISchemaCollection {
 public interface IRef {
     public var __refId: Int
     var __parent: IRef?
+    var referencedType: Short
 
     fun getByIndex(index: Int): Any?
 
@@ -96,13 +102,26 @@ public interface IRef {
 }
 
 
-open class Schema : IRef {
+open class Schema(final override var referencedType: Short = (-1).toShort()) : HashMap<String, Any?>(), IRef {
 
-    val fieldsByIndex = HashMap<Int, String?>()
-    val fieldTypes = HashMap<String, Class<*>?>()
-    val fieldTypeNames = HashMap<String, String?>()
-    val fieldChildPrimitiveTypes = HashMap<String, String?>()
-    val fieldChildTypes = HashMap<String, Class<*>?>()
+    var fieldsByIndex = HashMap<Int, String?>()
+    var fieldTypes = HashMap<String, Class<*>?>()
+    var fieldTypeNames = HashMap<String, String?>()
+    var fieldChildPrimitiveTypes = HashMap<String, String?>()
+    var fieldChildTypes = HashMap<String, Class<*>?>()
+
+    public override fun clone(): Schema {
+        return Schema().also {
+            it.putAll(this)
+            it.fieldsByIndex.putAll(fieldsByIndex)
+            it.fieldTypes.putAll(fieldTypes)
+            it.fieldTypeNames.putAll(fieldTypeNames)
+            it.fieldChildPrimitiveTypes.putAll(fieldChildPrimitiveTypes)
+            it.fieldChildTypes.putAll(fieldChildTypes)
+            it.onChange = onChange
+            it.onRemove = onRemove
+        }
+    }
 
     @JsonIgnore
     var onChange: ((changes: List<DataChange?>) -> Unit)? = null
@@ -120,48 +139,29 @@ open class Schema : IRef {
     private var refs: ReferenceTracker? = null
 
     init {
-        for (field in javaClass.allFields) {
-            if (!field.isAnnotationPresent(SchemaField::class.java)) continue
-            field.isAccessible = true
-            val fieldName = field.name
-            val v1 = field.getAnnotation(SchemaField::class.java).v1
-            val v2 = field.getAnnotation(SchemaField::class.java).v2
-
-            val parts = v1.split("/").toTypedArray()
-            val fieldIndex = parts[0].toInt()
-            val schemaFieldTypeName = parts[1]
-
-            fieldsByIndex[fieldIndex] = fieldName
-            fieldTypeNames[fieldName] = schemaFieldTypeName
-
-            if (isPrimary(schemaFieldTypeName)) {
-                fieldTypes[fieldName] = v2.java
-            } else if (schemaFieldTypeName == "ref") {
-                fieldTypes[fieldName] = v2.java
-                fieldChildTypes[fieldName] = v2.java
-            } else {
-                // array, map
-                fieldTypes[fieldName] = getType(schemaFieldTypeName)
-                fieldChildPrimitiveTypes[fieldName] = parts[2]
-                fieldChildTypes[fieldName] = v2.java
-                if (v2 == Any::class && parts[2] != "ref") {
-                    fieldChildTypes[fieldName] = getType(parts[2])
+        if (referencedType >= 0) {
+            val types = Reflection.reflectionObject["types"] as ArraySchema<Schema>
+            for (type in types) {
+                if ((type?.get("id") as Short) == referencedType) {
+                    val fields = type["fields"] as ArraySchema<Schema>
+                    var i = 0
+                    for (field in fields) {
+                        val fieldName = field?.get("name") as String
+                        val fieldType = field["type"] as String
+                        val rt = field["referencedType"] as Short?
+                        fieldsByIndex[i] = fieldName
+                        fieldTypeNames[fieldName] = fieldType
+                        fieldTypes[fieldName] = getType(fieldType)
+                        if (!isPrimary(fieldType) && rt != null) {
+                            fieldChildPrimitiveTypes[fieldName] = "ref"
+                            fieldChildTypes[fieldName] = Schema::class.java
+                        }
+                        i++
+                    }
+                    break
                 }
             }
         }
-    }
-
-    /* allow to retrieve property values by its string name */
-    public operator fun get(propertyName: String): Any? {
-        val field = this::class.java[propertyName]
-        field?.isAccessible = true
-        return field?.get(this)
-    }
-
-    public operator fun set(propertyName: String, value: Any?) {
-        val field = this::class.java[propertyName]
-        field?.isAccessible = true
-        field?.set(this, value)
     }
 
     public fun decode(bytes: ByteArray, it: Iterator? = Iterator(0), refs: ReferenceTracker? = null) {
@@ -175,6 +175,7 @@ open class Schema : IRef {
 
         var refId = 0
         var _ref: IRef? = this
+        _ref?.referencedType = Reflection.reflectionObject["rootType"] as Short
         var changes = arrayListOf<DataChange>()
         val allChanges = hashMapOf<Any, Any>()
         refs.add(refId, this)
@@ -268,7 +269,7 @@ open class Schema : IRef {
 
                 // Flag `refId` for garbage collection.
                 if (previousValue != null && previousValue is IRef) {
-                    refs.remove((previousValue as IRef).__refId!!)
+                    refs.remove(previousValue.__refId)
                 }
 
                 value = null
@@ -305,13 +306,18 @@ open class Schema : IRef {
                 value = refs[refId]
 
                 if (operation != OPERATION.REPLACE.value) {
-                    val concreteChildType = getSchemaType(bytes, it, childType)
+//                    val concreteChildType = getSchemaType(bytes, it, childType)
 
                     if (value == null) {
-                        value = createTypeInstance(concreteChildType)
+//                        value = createTypeInstance(concreteChildType)
+                        val rt = when(fieldName) {
+                            "" -> _ref.referencedType
+                            else -> Reflection.findRt(_ref.referencedType, fieldName)
+                        }
+                        value = Schema(rt)
 
                         if (previousValue != null) {
-                            (value as Schema).onChange = (previousValue as Schema).onChange
+                            value.onChange = (previousValue as Schema).onChange
                             value.onRemove = previousValue.onRemove
 
                             if ((previousValue as IRef).__refId > 0 && refId != previousValue.__refId) {
@@ -327,14 +333,16 @@ open class Schema : IRef {
                 value = Decoder.decodePrimitiveType(fieldType, bytes, it)
             } else {
                 refId = Decoder.decodeNumber(bytes, it).toInt()
-                value = refs[refId]
+//                value = refs[refId]
 
                 val valueRef: ISchemaCollection = if (refs.has(refId))
                     previousValue as ISchemaCollection
                 else {
+                    val rt = Reflection.findRt(_ref.referencedType, fieldName)
+                    if (rt == (-1).toShort()) throw Exception("Reflection Error")
                     when (fieldType) {
-                        "array" -> ArraySchema(childType)
-                        "map" -> MapSchema(childType)
+                        "array" -> ArraySchema(childType, rt)
+                        "map" -> MapSchema(childType, rt)
                         else -> throw Error("$fieldType is not supported")
                     }
                 }
@@ -405,7 +413,7 @@ open class Schema : IRef {
     }
 
     public fun triggerAll() {
-        var allChanges = HashMap<Any, Any>()
+        val allChanges = HashMap<Any, Any>()
         triggerAllFillChanges(this, allChanges)
         triggerChanges(allChanges)
     }
@@ -417,7 +425,7 @@ open class Schema : IRef {
             return
         }
 
-        var changes = arrayListOf<DataChange>()
+        val changes = arrayListOf<DataChange>()
         allChanges[currentRef.__refId as Any] = changes
 
         if (currentRef is Schema) {
@@ -438,15 +446,12 @@ open class Schema : IRef {
                 val keys = (currentRef as ISchemaCollection)._keys()
                 for (key in keys) {
                     val child = currentRef._get(key)
-
-                    changes.add(DataChange
-                    (
+                    changes.add(DataChange(
                             field = null,
                             dynamicIndex = key,
                             op = OPERATION.ADD.value,
                             value = child
                     ))
-
                     triggerAllFillChanges(child as IRef, allChanges)
                 }
             }
@@ -502,23 +507,6 @@ open class Schema : IRef {
             }
         }
     }
-
-    fun getSchemaType(bytes: ByteArray, it: Iterator, defaultType: Class<*>?): Class<*>? {
-        var type: Class<*>? = defaultType
-        if (bytes[it.offset].toInt() and 0xFF == SPEC.TYPE_ID.value) {
-            it.offset++
-            val typeId: Int = Decoder.decodeNumber(bytes, it).toInt()
-            type = Context.instance[typeId]
-        }
-        return type
-    }
-
-    fun createTypeInstance(type: Class<*>?): Any {
-        val constructor = type!!.getDeclaredConstructor()
-        constructor.isAccessible = true
-        return constructor.newInstance()
-    }
-
 
     public override fun getByIndex(index: Int): Any? {
         val fieldName: String = fieldsByIndex[index] ?: return null
