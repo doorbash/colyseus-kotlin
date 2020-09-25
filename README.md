@@ -9,7 +9,7 @@ dependencies {
     implementation 'io.github.doorbash:colyseus-kotlin:0.14.0-alpha.2'
 }
 ```
-Alternatively you can use [no-reflection](https://github.com/doorbash/colyseus-kotlin/tree/no-reflection) version which is not using Reflection:
+Alternatively you can use [no-reflection](https://github.com/doorbash/colyseus-kotlin/tree/no-reflection) version:
 
 ```groovy
 dependencies {
