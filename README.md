@@ -49,11 +49,11 @@ onStateChange = { state, isFirstState ->
     }
 }
 
-(state["players"] as ArraySchema<*>).onAdd = { player: Any?, key: Int ->
+(state["players"] as ArraySchema<*>).onAdd = { player, key ->
     println("player added: " + key + "  " + (player as Schema)["x"])
 }
 
-(state["players"] as ArraySchema<*>).onRemove = { player: Any?, key: Int ->
+(state["players"] as ArraySchema<*>).onRemove = { player, key ->
     println("player removed: " + key + "  " + (player as Schema)["x"])
 }
 
