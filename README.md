@@ -1,6 +1,6 @@
 # Colyseus-Kotlin
 
-Implementation of Colyseus client using Kotlin without Java Reflection
+Implementation of Colyseus client using Kotlin without Reflection
 
 ## Download
 
