@@ -175,7 +175,7 @@ send(3)
 
 ## Usage examples
 
-- [agar-io](https://github.com/doorbash/agar-io) - A simple agar.io clone made with Libgdx
+- [agar-io](https://github.com/doorbash/agar-io) - A simple agar.io clone made with LibKTX
 
 ## License
 
