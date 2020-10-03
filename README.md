@@ -9,13 +9,6 @@ dependencies {
     implementation 'io.github.doorbash:colyseus-kotlin:0.14.0-alpha.2'
 }
 ```
-There is also a [no-reflection](https://github.com/doorbash/colyseus-kotlin/tree/no-reflection) version:
-
-```groovy
-dependencies {
-    implementation 'io.github.doorbash:colyseus-kotlin-no-reflection:0.14.0-alpha'
-}
-```
 
 ## How to
 
@@ -175,7 +168,7 @@ send(3)
 
 ## Usage examples
 
-- [agar-io](https://github.com/doorbash/agar-io) - A simple agar.io clone made with LibKTX
+- [agar-io](https://github.com/doorbash/agar-io) - A simple agar.io clone made with Libgdx
 
 ## License
 
