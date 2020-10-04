@@ -7,63 +7,76 @@ import java.nio.charset.StandardCharsets
 object Decoder {
     fun decodePrimitiveType(type: String?, bytes: ByteArray, it: Iterator): Any {
         return when (type) {
-            "string" -> return decodeString(bytes, it)
-            "number" -> return decodeNumber(bytes, it)
-            "int8" -> return decodeInt8(bytes, it)
-            "uint8" -> return decodeUint8(bytes, it)
-            "int16" -> return decodeInt16(bytes, it)
-            "uint16" -> return decodeUint16(bytes, it)
-            "int32" -> return decodeInt32(bytes, it)
-            "uint32" -> return decodeUint32(bytes, it)
-            "int64" -> return decodeInt64(bytes, it)
-            "uint64" -> return decodeUint64(bytes, it)
-            "float32" -> return decodeFloat32(bytes, it)
-            "float64" -> return decodeFloat64(bytes, it)
-            "boolean" -> return decodeBoolean(bytes, it)
-            else -> return Any()
+            "string" -> decodeString(bytes, it)
+            "number" -> decodeNumber(bytes, it)
+            "int8" -> decodeInt8(bytes, it)
+            "uint8" -> decodeUint8(bytes, it)
+            "int16" -> decodeInt16(bytes, it)
+            "uint16" -> decodeUint16(bytes, it)
+            "int32" -> decodeInt32(bytes, it)
+            "uint32" -> decodeUint32(bytes, it)
+            "int64" -> decodeInt64(bytes, it)
+            "uint64" -> decodeUint64(bytes, it)
+            "float32" -> decodeFloat32(bytes, it)
+            "float64" -> decodeFloat64(bytes, it)
+            "boolean" -> decodeBoolean(bytes, it)
+            else -> Any()
         }
     }
 
     fun decodeNumber(bytes: ByteArray, it: Iterator): Float {
         val prefix: Int = bytes[it.offset++].toInt() and 0xFF
-        if (prefix < 128) {
-            // positive fixint
-            return prefix.toFloat()
-        } else if (prefix == 0xca) {
-            // float 32
-            return decodeFloat32(bytes, it)
-        } else if (prefix == 0xcb) {
-            // float 64
-            return decodeFloat64(bytes, it).toFloat()
-        } else if (prefix == 0xcc) {
-            // uint 8
-            return decodeUint8(bytes, it).toFloat()
-        } else if (prefix == 0xcd) {
-            // uint 16
-            return decodeUint16(bytes, it).toFloat()
-        } else if (prefix == 0xce) {
-            // uint 32
-            return decodeUint32(bytes, it).toFloat()
-        } else if (prefix == 0xcf) {
-            // uint 64
-            return decodeUint64(bytes, it).toFloat()
-        } else if (prefix == 0xd0) {
-            // int 8
-            return decodeInt8(bytes, it).toFloat()
-        } else if (prefix == 0xd1) {
-            // int 16
-            return decodeInt16(bytes, it).toFloat()
-        } else if (prefix == 0xd2) {
-            // int 32
-            return decodeInt32(bytes, it).toFloat()
-        } else if (prefix == 0xd3) {
-            // int 64
-            return decodeInt64(bytes, it).toFloat()
-        } else if (prefix > 0xdf) {
-            // negative fixint
-            return ((0xff - prefix + 1) * -1).toFloat()
+        when {
+            prefix < 128 -> {
+                // positive fixint
+                return prefix.toFloat()
+            }
+            prefix == 0xca -> {
+                // float 32
+                return decodeFloat32(bytes, it)
+            }
+            prefix == 0xcb -> {
+                // float 64
+                return decodeFloat64(bytes, it).toFloat()
+            }
+            prefix == 0xcc -> {
+                // uint 8
+                return decodeUint8(bytes, it).toFloat()
+            }
+            prefix == 0xcd -> {
+                // uint 16
+                return decodeUint16(bytes, it).toFloat()
+            }
+            prefix == 0xce -> {
+                // uint 32
+                return decodeUint32(bytes, it).toFloat()
+            }
+            prefix == 0xcf -> {
+                // uint 64
+                return decodeUint64(bytes, it).toFloat()
+            }
+            prefix == 0xd0 -> {
+                // int 8
+                return decodeInt8(bytes, it).toFloat()
+            }
+            prefix == 0xd1 -> {
+                // int 16
+                return decodeInt16(bytes, it).toFloat()
+            }
+            prefix == 0xd2 -> {
+                // int 32
+                return decodeInt32(bytes, it).toFloat()
+            }
+            prefix == 0xd3 -> {
+                // int 64
+                return decodeInt64(bytes, it).toFloat()
+            }
+            prefix > 0xdf -> {
+                // negative fixint
+                return ((0xff - prefix + 1) * -1).toFloat()
+            }
+            else -> return Float.NaN
         }
-        return Float.NaN
     }
 
     fun decodeInt8(bytes: ByteArray, it: Iterator): Byte {
@@ -130,15 +143,20 @@ object Decoder {
     fun decodeString(bytes: ByteArray, it: Iterator): String {
         val prefix: Int = bytes[it.offset++].toInt() and 0xFF
         var length = 0
-        if (prefix < 0xc0) {
-            // fixstr
-            length = prefix and 0x1f
-        } else if (prefix == 0xd9) {
-            length = decodeUint8(bytes, it).toInt()
-        } else if (prefix == 0xda) {
-            length = decodeUint16(bytes, it)
-        } else if (prefix == 0xdb) {
-            length = decodeUint32(bytes, it).toInt()
+        when {
+            prefix < 0xc0 -> {
+                // fixstr
+                length = prefix and 0x1f
+            }
+            prefix == 0xd9 -> {
+                length = decodeUint8(bytes, it).toInt()
+            }
+            prefix == 0xda -> {
+                length = decodeUint16(bytes, it)
+            }
+            prefix == 0xdb -> {
+                length = decodeUint32(bytes, it).toInt()
+            }
         }
         val _bytes = ByteArray(length)
         System.arraycopy(bytes, it.offset, _bytes, 0, length)

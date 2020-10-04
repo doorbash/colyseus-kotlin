@@ -187,13 +187,11 @@ class Client(private val endpoint: String) {
     @Throws(UnsupportedEncodingException::class)
     private fun buildEndpoint(room: JsonNode, options: LinkedHashMap<String, Any?>): String {
         val charset = "UTF-8"
-        var i = 0
         val params = StringBuilder()
-        for (name in options.keys) {
+        for ((i, name) in options.keys.withIndex()) {
             if (i > 0) params.append("&")
             params.append(URLEncoder.encode(name, charset)).append("=").append(URLEncoder.encode(options[name].toString(), charset))
-            i++
         }
-        return endpoint + "/" + room["processId"].asText() + "/" + room["roomId"].asText() + "?" + params.toString()
+        return "$endpoint/${room["processId"].asText()}/${room["roomId"].asText()}?$params"
     }
 }
