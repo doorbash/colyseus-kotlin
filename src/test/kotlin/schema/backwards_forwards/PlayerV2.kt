@@ -1,10 +1,9 @@
 package schema.backwards_forwards
 
-import io.colyseus.serializer.schema.types.ArraySchema
-
 import io.colyseus.annotations.SchemaField
 import io.colyseus.default
 import io.colyseus.serializer.schema.Schema
+import io.colyseus.serializer.schema.types.ArraySchema
 
 class PlayerV2 : Schema() {
     @SchemaField("0/number")

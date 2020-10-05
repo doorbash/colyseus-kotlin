@@ -1,8 +1,8 @@
 package io.colyseus.example.kotlin
 
-import io.colyseus.serializer.schema.Schema
 import io.colyseus.annotations.SchemaField
 import io.colyseus.default
+import io.colyseus.serializer.schema.Schema
 import io.colyseus.serializer.schema.types.ArraySchema
 import io.colyseus.serializer.schema.types.MapSchema
 

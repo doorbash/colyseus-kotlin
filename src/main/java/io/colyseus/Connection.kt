@@ -5,7 +5,6 @@ import org.java_websocket.client.WebSocketClient
 import org.java_websocket.drafts.Draft_6455
 import org.java_websocket.handshake.ServerHandshake
 import org.msgpack.jackson.dataformat.MessagePackFactory
-import java.lang.Error
 import java.net.URI
 import java.nio.ByteBuffer
 import java.util.*

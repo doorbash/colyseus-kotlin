@@ -11,6 +11,7 @@ import java.nio.charset.StandardCharsets
 object Http {
     private const val HTTP_CONNECT_TIMEOUT = 10000
     private const val HTTP_READ_TIMEOUT = 10000
+
     @JvmOverloads
     @Throws(IOException::class, HttpException::class)
     fun request(url: String?, method: String? = "GET", httpHeaders: MutableMap<String, String>? = null, body: String? = null): String {

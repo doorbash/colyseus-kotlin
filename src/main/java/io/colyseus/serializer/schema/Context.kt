@@ -1,6 +1,6 @@
 package io.colyseus.serializer.schema
 
-import java.util.LinkedHashMap
+import java.util.*
 
 class Context {
     private var typeIds = LinkedHashMap<Int, Class<*>>()

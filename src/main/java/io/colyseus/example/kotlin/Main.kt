@@ -1,7 +1,6 @@
 package io.colyseus.example.kotlin
 
 import io.colyseus.Client
-import io.colyseus.serializer.schema.Schema
 import io.colyseus.serializer.schema.types.ArraySchema
 import io.colyseus.serializer.schema.types.MapSchema
 import kotlinx.coroutines.runBlocking

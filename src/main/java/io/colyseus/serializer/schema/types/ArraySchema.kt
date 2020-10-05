@@ -6,8 +6,6 @@ import io.colyseus.serializer.schema.IRef
 import io.colyseus.serializer.schema.ISchemaCollection
 import io.colyseus.serializer.schema.ReferenceTracker
 import io.colyseus.serializer.schema.Schema
-import java.util.*
-import kotlin.collections.ArrayList
 
 class ArraySchema<T : Any?>(
         @JsonIgnore public var ct: Class<T>?,
