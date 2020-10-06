@@ -142,36 +142,52 @@ class Room<T : Schema> internal constructor(schema: Class<T>, var name: String) 
     // Send a message by number type, without payload
     public fun send(type: Int) {
         ColyseusAsync.launch {
-            connection?.send(byteArrayOfInts(Protocol.ROOM_DATA, type))
+            sendSync(type)
         }
+    }
+
+    public fun sendSync(type: Int) {
+        connection?.send(byteArrayOfInts(Protocol.ROOM_DATA, type))
     }
 
     // Send a message by number type with payload
     public fun send(type: Int, message: Any) {
         ColyseusAsync.launch {
-            val initialBytes: ByteArray = byteArrayOfInts(Protocol.ROOM_DATA, type)
-            val encodedMessage: ByteArray = msgpackMapper.writeValueAsBytes(message)
-            connection?.send(initialBytes + encodedMessage)
+            sendSync(type, message)
         }
+    }
+
+    public fun sendSync(type: Int, message: Any) {
+        val initialBytes: ByteArray = byteArrayOfInts(Protocol.ROOM_DATA, type)
+        val encodedMessage: ByteArray = msgpackMapper.writeValueAsBytes(message)
+        connection?.send(initialBytes + encodedMessage)
     }
 
     // Send a message by string type, without payload
     public fun send(type: String) {
         ColyseusAsync.launch {
-            val encodedType: ByteArray = type.toByteArray()
-            val initialBytes: ByteArray = Encoder.getInitialBytesFromEncodedType(encodedType)
-            connection?.send(initialBytes + encodedType)
+            sendSync(type)
         }
+    }
+
+    public fun sendSync(type: String) {
+        val encodedType: ByteArray = type.toByteArray()
+        val initialBytes: ByteArray = Encoder.getInitialBytesFromEncodedType(encodedType)
+        connection?.send(initialBytes + encodedType)
     }
 
     // Send a message by string type with payload
     public fun send(type: String, message: Any) {
         ColyseusAsync.launch {
-            val encodedMessage: ByteArray = msgpackMapper.writeValueAsBytes(message)
-            val encodedType: ByteArray = type.toByteArray()
-            val initialBytes: ByteArray = Encoder.getInitialBytesFromEncodedType(encodedType)
-            connection?.send(initialBytes + encodedType + encodedMessage)
+            sendSync(type, message)
         }
+    }
+
+    public fun sendSync(type: String, message: Any) {
+        val encodedMessage: ByteArray = msgpackMapper.writeValueAsBytes(message)
+        val encodedType: ByteArray = type.toByteArray()
+        val initialBytes: ByteArray = Encoder.getInitialBytesFromEncodedType(encodedType)
+        connection?.send(initialBytes + encodedType + encodedMessage)
     }
 
     public inline fun <reified MessageType> onMessage(
