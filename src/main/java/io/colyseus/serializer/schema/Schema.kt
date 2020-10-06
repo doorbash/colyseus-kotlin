@@ -1,15 +1,14 @@
 package io.colyseus.serializer.schema
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import io.colyseus.allFields
-
 import io.colyseus.annotations.SchemaField
-import io.colyseus.get
-import io.colyseus.getType
-import io.colyseus.isPrimary
 import io.colyseus.serializer.schema.SPEC.SWITCH_TO_STRUCTURE
 import io.colyseus.serializer.schema.types.ArraySchema
 import io.colyseus.serializer.schema.types.MapSchema
+import io.colyseus.util.allFields
+import io.colyseus.util.get
+import io.colyseus.util.getType
+import io.colyseus.util.isPrimary
 
 
 /*

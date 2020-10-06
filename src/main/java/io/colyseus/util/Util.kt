@@ -1,4 +1,4 @@
-package io.colyseus
+package io.colyseus.util
 
 import io.colyseus.serializer.schema.types.ArraySchema
 import io.colyseus.serializer.schema.types.MapSchema

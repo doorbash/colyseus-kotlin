@@ -1,6 +1,6 @@
-import io.colyseus.byteArrayOfInts
 import io.colyseus.serializer.SchemaSerializer
 import io.colyseus.serializer.schema.ReferenceTracker
+import io.colyseus.util.byteArrayOfInts
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Test

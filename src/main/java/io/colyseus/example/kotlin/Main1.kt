@@ -5,7 +5,7 @@ import io.colyseus.serializer.schema.types.ArraySchema
 import io.colyseus.serializer.schema.types.MapSchema
 import kotlinx.coroutines.runBlocking
 
-object Main {
+object Main1 {
     @JvmStatic
     fun main(args: Array<String>) = runBlocking {
         val client = Client("ws://localhost:2567")
@@ -22,10 +22,7 @@ object Main {
             state.players.onRemove = { player: Player?, key: Int? ->
                 println("player removed: " + key + "  " + player?.x)
 
-                val c = Cell()
-                c.x = 100f
-                c.y = 200f
-                send(2, c)
+                send(2, Cell().apply { x == 100f; y = 200f })
             }
 
             onLeave = { code -> println("onLeave $code") }

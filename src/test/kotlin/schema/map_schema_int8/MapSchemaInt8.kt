@@ -1,9 +1,9 @@
 package schema.map_schema_int8
 
 import io.colyseus.annotations.SchemaField
-import io.colyseus.default
 import io.colyseus.serializer.schema.Schema
 import io.colyseus.serializer.schema.types.MapSchema
+import io.colyseus.util.default
 
 class MapSchemaInt8 : Schema() {
     @SchemaField("0/string")

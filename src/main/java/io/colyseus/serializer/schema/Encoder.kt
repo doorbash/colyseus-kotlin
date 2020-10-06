@@ -1,7 +1,7 @@
 package io.colyseus.serializer.schema
 
 import io.colyseus.Protocol
-import io.colyseus.byteArrayOfInts
+import io.colyseus.util.byteArrayOfInts
 
 class Encoder {
     companion object {

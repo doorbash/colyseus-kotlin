@@ -1,9 +1,13 @@
 package io.colyseus
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import io.colyseus.async.ColyseusAsync
 import io.colyseus.serializer.SchemaSerializer
 import io.colyseus.serializer.schema.*
 import io.colyseus.serializer.schema.Iterator
+import io.colyseus.util.byteArrayOfInts
+import io.colyseus.util.get
+import kotlinx.coroutines.launch
 import org.java_websocket.framing.CloseFrame
 import org.msgpack.jackson.dataformat.MessagePackFactory
 import java.net.URI
@@ -137,29 +141,37 @@ class Room<T : Schema> internal constructor(schema: Class<T>, var name: String) 
 
     // Send a message by number type, without payload
     public fun send(type: Int) {
-        connection?.send(byteArrayOfInts(Protocol.ROOM_DATA, type))
+        ColyseusAsync.launch {
+            connection?.send(byteArrayOfInts(Protocol.ROOM_DATA, type))
+        }
     }
 
     // Send a message by number type with payload
     public fun send(type: Int, message: Any) {
-        val initialBytes: ByteArray = byteArrayOfInts(Protocol.ROOM_DATA, type)
-        val encodedMessage: ByteArray = msgpackMapper.writeValueAsBytes(message)
-        connection?.send(initialBytes + encodedMessage)
+        ColyseusAsync.launch {
+            val initialBytes: ByteArray = byteArrayOfInts(Protocol.ROOM_DATA, type)
+            val encodedMessage: ByteArray = msgpackMapper.writeValueAsBytes(message)
+            connection?.send(initialBytes + encodedMessage)
+        }
     }
 
     // Send a message by string type, without payload
     public fun send(type: String) {
-        val encodedType: ByteArray = type.toByteArray()
-        val initialBytes: ByteArray = Encoder.getInitialBytesFromEncodedType(encodedType)
-        connection?.send(initialBytes + encodedType)
+        ColyseusAsync.launch {
+            val encodedType: ByteArray = type.toByteArray()
+            val initialBytes: ByteArray = Encoder.getInitialBytesFromEncodedType(encodedType)
+            connection?.send(initialBytes + encodedType)
+        }
     }
 
     // Send a message by string type with payload
     public fun send(type: String, message: Any) {
-        val encodedMessage: ByteArray = msgpackMapper.writeValueAsBytes(message)
-        val encodedType: ByteArray = type.toByteArray()
-        val initialBytes: ByteArray = Encoder.getInitialBytesFromEncodedType(encodedType)
-        connection?.send(initialBytes + encodedType + encodedMessage)
+        ColyseusAsync.launch {
+            val encodedMessage: ByteArray = msgpackMapper.writeValueAsBytes(message)
+            val encodedType: ByteArray = type.toByteArray()
+            val initialBytes: ByteArray = Encoder.getInitialBytesFromEncodedType(encodedType)
+            connection?.send(initialBytes + encodedType + encodedMessage)
+        }
     }
 
     public inline fun <reified MessageType> onMessage(

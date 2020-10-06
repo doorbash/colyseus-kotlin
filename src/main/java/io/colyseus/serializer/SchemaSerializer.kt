@@ -1,7 +1,5 @@
 package io.colyseus.serializer
 
-import io.colyseus.Lock
-import io.colyseus.allFields
 import io.colyseus.annotations.SchemaField
 import io.colyseus.serializer.schema.Context
 import io.colyseus.serializer.schema.Iterator
@@ -9,6 +7,8 @@ import io.colyseus.serializer.schema.ReferenceTracker
 import io.colyseus.serializer.schema.Schema
 import io.colyseus.serializer.schema.types.SchemaReflection
 import io.colyseus.serializer.schema.types.SchemaReflectionType
+import io.colyseus.util.Lock
+import io.colyseus.util.allFields
 
 class SchemaSerializer<T : Schema>(val schema: Class<T>) {
     var state: T = schema.getConstructor().newInstance() as T

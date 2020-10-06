@@ -1,11 +1,11 @@
 package io.colyseus.serializer.schema.types
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import io.colyseus.default
 import io.colyseus.serializer.schema.IRef
 import io.colyseus.serializer.schema.ISchemaCollection
 import io.colyseus.serializer.schema.ReferenceTracker
 import io.colyseus.serializer.schema.Schema
+import io.colyseus.util.default
 
 class ArraySchema<T : Any?>(
         @JsonIgnore public var ct: Class<T>?,

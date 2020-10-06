@@ -2,8 +2,12 @@ package io.colyseus
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
+import io.colyseus.async.ColyseusAsync
 import io.colyseus.serializer.schema.Schema
 import io.colyseus.util.Http.request
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.newSingleThreadContext
+import kotlinx.coroutines.withContext
 import java.io.UnsupportedEncodingException
 import java.net.URLEncoder
 import java.util.*
@@ -15,6 +19,7 @@ import kotlin.coroutines.suspendCoroutine
 class Client(private val endpoint: String) {
 
     private val objectMapper = ObjectMapper()
+    private val context = newSingleThreadContext("ColyseusClient-Thread")
 
     data class AvailableRoom(
             var roomId: String? = null,
@@ -40,6 +45,32 @@ class Client(private val endpoint: String) {
         )
     }
 
+    @JvmOverloads
+    public fun <T : Schema> joinOrCreate(
+            schema: Class<T>,
+            roomName: String,
+            options: LinkedHashMap<String, Any>? = null,
+            httpHeaders: MutableMap<String, String>? = null,
+            wsHeaders: Map<String, String>? = null,
+            callback: (Room<T>) -> Unit,
+            onError: (Exception) -> Unit,
+    ) {
+        ColyseusAsync.launch {
+            try {
+                callback(createMatchMakeRequest(
+                        schema,
+                        "joinOrCreate",
+                        roomName,
+                        options,
+                        httpHeaders,
+                        wsHeaders,
+                ))
+            } catch (e: Exception) {
+                onError.invoke(e)
+            }
+        }
+    }
+
     public suspend fun <T : Schema> create(
             schema: Class<T>,
             roomName: String,
@@ -55,6 +86,32 @@ class Client(private val endpoint: String) {
                 httpHeaders,
                 wsHeaders,
         )
+    }
+
+    @JvmOverloads
+    public fun <T : Schema> create(
+            schema: Class<T>,
+            roomName: String,
+            options: LinkedHashMap<String, Any>? = null,
+            httpHeaders: MutableMap<String, String>? = null,
+            wsHeaders: Map<String, String>? = null,
+            callback: (Room<T>) -> Unit,
+            onError: (Exception) -> Unit,
+    ) {
+        ColyseusAsync.launch {
+            try {
+                callback(createMatchMakeRequest(
+                        schema,
+                        "create",
+                        roomName,
+                        options,
+                        httpHeaders,
+                        wsHeaders,
+                ))
+            } catch (e: Exception) {
+                onError.invoke(e)
+            }
+        }
     }
 
     public suspend fun <T : Schema> join(
@@ -74,6 +131,32 @@ class Client(private val endpoint: String) {
         )
     }
 
+    @JvmOverloads
+    public fun <T : Schema> join(
+            schema: Class<T>,
+            roomName: String,
+            options: LinkedHashMap<String, Any>? = null,
+            httpHeaders: MutableMap<String, String>? = null,
+            wsHeaders: Map<String, String>? = null,
+            callback: (Room<T>) -> Unit,
+            onError: (Exception) -> Unit,
+    ) {
+        ColyseusAsync.launch {
+            try {
+                callback(createMatchMakeRequest(
+                        schema,
+                        "join",
+                        roomName,
+                        options,
+                        httpHeaders,
+                        wsHeaders,
+                ))
+            } catch (e: Exception) {
+                onError.invoke(e)
+            }
+        }
+    }
+
     public suspend fun <T : Schema> joinById(
             schema: Class<T>,
             roomId: String,
@@ -89,6 +172,32 @@ class Client(private val endpoint: String) {
                 httpHeaders,
                 wsHeaders,
         )
+    }
+
+    @JvmOverloads
+    public fun <T : Schema> joinById(
+            schema: Class<T>,
+            roomId: String,
+            options: LinkedHashMap<String, Any>? = null,
+            httpHeaders: MutableMap<String, String>? = null,
+            wsHeaders: Map<String, String>? = null,
+            callback: (Room<T>) -> Unit,
+            onError: (Exception) -> Unit,
+    ) {
+        ColyseusAsync.launch {
+            try {
+                callback(createMatchMakeRequest(
+                        schema,
+                        "joinById",
+                        roomId,
+                        options,
+                        httpHeaders,
+                        wsHeaders,
+                ))
+            } catch (e: Exception) {
+                onError.invoke(e)
+            }
+        }
     }
 
     public suspend fun <T : Schema> reconnect(
@@ -110,7 +219,48 @@ class Client(private val endpoint: String) {
         )
     }
 
+    @JvmOverloads
+    public fun <T : Schema> reconnect(
+            schema: Class<T>,
+            roomId: String,
+            sessionId: String,
+            httpHeaders: MutableMap<String, String>? = null,
+            wsHeaders: Map<String, String>? = null,
+            callback: (Room<T>) -> Unit,
+            onError: (Exception) -> Unit,
+    ) {
+        ColyseusAsync.launch {
+            try {
+                val options = LinkedHashMap<String, Any>()
+                options["sessionId"] = sessionId
+                callback(createMatchMakeRequest(
+                        schema,
+                        "joinById",
+                        roomId,
+                        options,
+                        httpHeaders,
+                        wsHeaders
+                ))
+            } catch (e: Exception) {
+                onError.invoke(e)
+            }
+        }
+    }
+
     suspend fun getAvailableRooms(roomName: String): List<AvailableRoom> {
+        return withContext(ColyseusAsync.coroutineContext) {
+            getAvailableRoomsSync(roomName)
+        }
+    }
+
+    @JvmOverloads
+    fun getAvailableRooms(roomName: String, callback: (List<AvailableRoom>) -> Unit) {
+        ColyseusAsync.launch {
+            callback(getAvailableRoomsSync(roomName))
+        }
+    }
+
+    private fun getAvailableRoomsSync(roomName: String): List<AvailableRoom> {
         val url = endpoint.replace("ws", "http") + "/matchmake/" + roomName
         val httpHeaders = LinkedHashMap<String, String>()
         httpHeaders["Accept"] = "application/json"
@@ -128,47 +278,49 @@ class Client(private val endpoint: String) {
             httpHeaders: MutableMap<String, String>? = null,
             wsHeaders: Map<String, String>? = null,
     ): Room<T> {
-        return suspendCoroutine { cont: Continuation<Room<T>> ->
-            var headers: MutableMap<String, String>? = httpHeaders
-            try {
-                val url = endpoint.replace("ws", "http") +
-                        "/matchmake/" +
-                        method +
-                        "/" +
-                        URLEncoder.encode(roomName, "UTF-8")
-                val body = if (options != null) {
-                    objectMapper.writeValueAsString(
-                            objectMapper.convertValue(options, JsonNode::class.java)
-                    )
-                } else "{}"
-                if (headers == null) headers = LinkedHashMap()
-                headers["Accept"] = "application/json"
-                headers["Content-Type"] = "application/json"
-                val res = request(url = url, method = "POST", httpHeaders = headers, body = body)
-                val response = objectMapper.readValue(res, JsonNode::class.java)
-                if (response.has("error")) {
-                    throw MatchMakeException(response["error"].asText(), response["code"].asInt())
+        return withContext(ColyseusAsync.coroutineContext) {
+            suspendCoroutine { cont: Continuation<Room<T>> ->
+                var headers: MutableMap<String, String>? = httpHeaders
+                try {
+                    val url = endpoint.replace("ws", "http") +
+                            "/matchmake/" +
+                            method +
+                            "/" +
+                            URLEncoder.encode(roomName, "UTF-8")
+                    val body = if (options != null) {
+                        objectMapper.writeValueAsString(
+                                objectMapper.convertValue(options, JsonNode::class.java)
+                        )
+                    } else "{}"
+                    if (headers == null) headers = LinkedHashMap()
+                    headers["Accept"] = "application/json"
+                    headers["Content-Type"] = "application/json"
+                    val res = request(url = url, method = "POST", httpHeaders = headers, body = body)
+                    val response = objectMapper.readValue(res, JsonNode::class.java)
+                    if (response.has("error")) {
+                        throw MatchMakeException(response["error"].asText(), response["code"].asInt())
+                    }
+                    val room = Room(schema, roomName)
+                    val roomId = response["room"]["roomId"].asText()
+                    room.id = roomId
+                    val sessionId = response["sessionId"].asText()
+                    room.sessionId = sessionId
+                    room.onError = { code, message ->
+                        cont.resumeWithException(Exception(message))
+                    }
+                    room.onJoin = {
+                        room.onError = null
+                        room.onJoin = null
+                        cont.resume(room)
+                    }
+                    val wsOptions = LinkedHashMap<String, Any?>()
+                    wsOptions["sessionId"] = room.sessionId
+                    val wsUrl = buildEndpoint(response["room"], wsOptions)
+                    //            System.out.println("ws url is " + wsUrl)
+                    room.connect(wsUrl, wsHeaders)
+                } catch (e: Exception) {
+                    cont.resumeWithException(e)
                 }
-                val room = Room(schema, roomName)
-                val roomId = response["room"]["roomId"].asText()
-                room.id = roomId
-                val sessionId = response["sessionId"].asText()
-                room.sessionId = sessionId
-                room.onError = { code, message ->
-                    cont.resumeWithException(Exception(message))
-                }
-                room.onJoin = {
-                    room.onError = null
-                    room.onJoin = null
-                    cont.resume(room)
-                }
-                val wsOptions = LinkedHashMap<String, Any?>()
-                wsOptions["sessionId"] = room.sessionId
-                val wsUrl = buildEndpoint(response["room"], wsOptions)
-                //            System.out.println("ws url is " + wsUrl)
-                room.connect(wsUrl, wsHeaders)
-            } catch (e: Exception) {
-                cont.resumeWithException(e)
             }
         }
     }
