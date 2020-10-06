@@ -19,7 +19,6 @@ import kotlin.coroutines.suspendCoroutine
 class Client(private val endpoint: String) {
 
     private val objectMapper = ObjectMapper()
-    private val context = newSingleThreadContext("ColyseusClient-Thread")
 
     data class AvailableRoom(
             var roomId: String? = null,
