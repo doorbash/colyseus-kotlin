@@ -7,24 +7,23 @@ import io.colyseus.serializer.schema.ReferenceTracker
 import io.colyseus.serializer.schema.Schema
 import io.colyseus.serializer.schema.types.SchemaReflection
 import io.colyseus.serializer.schema.types.SchemaReflectionType
-import io.colyseus.util.Lock
 import io.colyseus.util.allFields
 
 class SchemaSerializer<T : Schema>(val schema: Class<T>) {
     var state: T = schema.getConstructor().newInstance() as T
     var refs = ReferenceTracker()
-    val lock = Lock()
+//    val lock = Lock()
 
     fun setState(data: ByteArray, offset: Int = 0) {
-        lock.withLock {
-            state.decode(data, Iterator(offset), refs)
-        }
+//        lock.withLock {
+        state.decode(data, Iterator(offset), refs)
+//        }
     }
 
     fun patch(data: ByteArray, offset: Int = 0) {
-        lock.withLock {
-            state.decode(data, Iterator(offset), refs)
-        }
+//        lock.withLock {
+        state.decode(data, Iterator(offset), refs)
+//        }
     }
 
     fun teardown() {
@@ -34,15 +33,15 @@ class SchemaSerializer<T : Schema>(val schema: Class<T>) {
     }
 
     fun handshake(bytes: ByteArray?, offset: Int = 0) {
-        lock.withLock {
-            val reflection = SchemaReflection()
-            reflection.decode(bytes!!, Iterator(offset))
-            Context.instance.clear()
-            initTypes(reflection, schema = schema as Class<Any>)
-            for (rt in reflection.types) {
-                Context.instance.setTypeId(rt?.type!!, rt.id)
-            }
+//        lock.withLock {
+        val reflection = SchemaReflection()
+        reflection.decode(bytes!!, Iterator(offset))
+        Context.instance.clear()
+        initTypes(reflection, schema = schema as Class<Any>)
+        for (rt in reflection.types) {
+            Context.instance.setTypeId(rt?.type!!, rt.id)
         }
+//        }
     }
 
     private fun initTypes(reflection: SchemaReflection, index: Int = reflection.rootType, schema: Class<out Any>) {

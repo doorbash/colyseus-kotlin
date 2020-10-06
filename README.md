@@ -6,7 +6,7 @@ Implementation of Colyseus client using Kotlin
 
 ```groovy
 dependencies {
-    implementation 'io.github.doorbash:colyseus-kotlin:0.14.0-alpha.8'
+    implementation 'io.github.doorbash:colyseus-kotlin:0.14.0-alpha.9'
 }
 ```
 
