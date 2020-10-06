@@ -16,15 +16,15 @@ class SchemaSerializer<T : Schema>(val schema: Class<T>) {
     val lock = Lock()
 
     fun setState(data: ByteArray, offset: Int = 0) {
-//        lock.withLock {
-        state.decode(data, Iterator(offset), refs)
-//        }
+        lock.withLock {
+            state.decode(data, Iterator(offset), refs)
+        }
     }
 
     fun patch(data: ByteArray, offset: Int = 0) {
-//        lock.withLock {
-        state.decode(data, Iterator(offset), refs)
-//        }
+        lock.withLock {
+            state.decode(data, Iterator(offset), refs)
+        }
     }
 
     fun teardown() {
@@ -34,15 +34,15 @@ class SchemaSerializer<T : Schema>(val schema: Class<T>) {
     }
 
     fun handshake(bytes: ByteArray?, offset: Int = 0) {
-//        lock.withLock {
-        val reflection = SchemaReflection()
-        reflection.decode(bytes!!, Iterator(offset))
-        Context.instance.clear()
-        initTypes(reflection, schema = schema as Class<Any>)
-        for (rt in reflection.types) {
-            Context.instance.setTypeId(rt?.type!!, rt.id)
+        lock.withLock {
+            val reflection = SchemaReflection()
+            reflection.decode(bytes!!, Iterator(offset))
+            Context.instance.clear()
+            initTypes(reflection, schema = schema as Class<Any>)
+            for (rt in reflection.types) {
+                Context.instance.setTypeId(rt?.type!!, rt.id)
+            }
         }
-//        }
     }
 
     private fun initTypes(reflection: SchemaReflection, index: Int = reflection.rootType, schema: Class<out Any>) {
