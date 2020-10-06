@@ -79,10 +79,10 @@ operator fun Class<*>.get(name: String): Field? {
 
 class Lock {
     private val lock = ReentrantLock(true)
-    fun withLock(block: () -> Unit) {
+    fun <T> withLock(block: () -> T): T {
         try {
             lock.lock()
-            block()
+            return block()
         } finally {
             lock.unlock()
         }
