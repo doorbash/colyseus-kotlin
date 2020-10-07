@@ -5,6 +5,7 @@ import io.colyseus.serializer.schema.IRef
 import io.colyseus.serializer.schema.ISchemaCollection
 import io.colyseus.serializer.schema.ReferenceTracker
 import io.colyseus.serializer.schema.Schema
+import io.colyseus.util.callbacks.Function2Void
 import io.colyseus.util.default
 
 class ArraySchema<T : Any?>(
@@ -16,11 +17,23 @@ class ArraySchema<T : Any?>(
     @JsonIgnore
     var onAdd: ((value: T, key: Int) -> Unit)? = null
 
+    public fun setOnAdd(f: Function2Void<T, Int>) {
+        onAdd = f::invoke
+    }
+
     @JsonIgnore
     var onChange: ((value: T, key: Int) -> Unit)? = null
 
+    public fun setOnChange(f: Function2Void<T, Int>) {
+        onChange = f::invoke
+    }
+
     @JsonIgnore
     var onRemove: ((value: T, key: Int) -> Unit)? = null
+
+    public fun setOnRemove(f: Function2Void<T, Int>) {
+        onRemove = f::invoke
+    }
 
     public override fun hasSchemaChild(): Boolean = (Schema::class.java).isAssignableFrom(ct)
 

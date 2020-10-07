@@ -5,6 +5,7 @@ import io.colyseus.serializer.schema.IRef
 import io.colyseus.serializer.schema.ISchemaCollection
 import io.colyseus.serializer.schema.ReferenceTracker
 import io.colyseus.serializer.schema.Schema
+import io.colyseus.util.callbacks.Function2Void
 import io.colyseus.util.default
 import kotlin.collections.set
 
@@ -17,11 +18,23 @@ class MapSchema<T : Any?>(
     @JsonIgnore
     public var onAdd: ((value: T, key: String) -> Unit)? = null
 
+    public fun setOnAdd(f: Function2Void<T, String>) {
+        onAdd = f::invoke
+    }
+
     @JsonIgnore
     public var onChange: ((value: T, key: String) -> Unit)? = null
 
+    public fun setOnChange(f: Function2Void<T, String>) {
+        onChange = f::invoke
+    }
+
     @JsonIgnore
     public var onRemove: ((value: T, key: String) -> Unit)? = null
+
+    public fun setOnRemove(f: Function2Void<T, String>) {
+        onRemove = f::invoke
+    }
 
     var indexes = HashMap<Int, String>()
 

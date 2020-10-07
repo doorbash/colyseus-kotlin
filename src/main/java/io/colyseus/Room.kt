@@ -6,6 +6,9 @@ import io.colyseus.serializer.SchemaSerializer
 import io.colyseus.serializer.schema.*
 import io.colyseus.serializer.schema.Iterator
 import io.colyseus.util.byteArrayOfInts
+import io.colyseus.util.callbacks.Function0Void
+import io.colyseus.util.callbacks.Function1Void
+import io.colyseus.util.callbacks.Function2Void
 import io.colyseus.util.get
 import kotlinx.coroutines.launch
 import org.java_websocket.framing.CloseFrame
@@ -22,9 +25,25 @@ class Room<T : Schema> internal constructor(schema: Class<T>, var name: String) 
     public var onStateChange: ((state: T, isFirstState: Boolean) -> Unit)? = null
     public val onMessageHandlers = hashMapOf<String, MessageHandler<*>>()
 
-    class MessageHandler<out K> constructor(
-            val type: Class<out K>,
-            val handler: ((message: Any) -> Unit)?,
+    public fun setOnLeave(f: Function1Void<Int>) {
+        onLeave = f::invoke
+    }
+
+    public fun setOnError(f: Function2Void<Int, String?>) {
+        onError = f::invoke
+    }
+
+    public fun setOnJoin(f: Function0Void) {
+        onJoin = f::invoke
+    }
+
+    public fun setOnStateChange(f: Function2Void<T, Boolean>) {
+        onStateChange = f::invoke
+    }
+
+    class MessageHandler<K> constructor(
+            val type: Class<K>,
+            val handler: ((message: K) -> Unit)?,
     )
 
     var id: String? = null
@@ -82,14 +101,18 @@ class Room<T : Schema> internal constructor(schema: Class<T>, var name: String) 
                     onError?.invoke(errorCode, errorMessage)
                 }
                 Protocol.ROOM_DATA_SCHEMA -> {
-                    val messageType: Class<*> = Context.instance.get(bytes[1].toInt() and 0xFF) as Class<*>
-                    val message = messageType.getConstructor().newInstance() as Schema
-                    message.decode(bytes, Iterator(2))
-                    val messageHandler = onMessageHandlers["s" + messageType.typeName]
-                    if (messageHandler != null) {
-                        messageHandler.handler?.invoke(message)
-                    } else {
-                        println("No handler for type " + messageType.typeName)
+                    try {
+                        val messageType: Class<*> = Context.instance.get(bytes[1].toInt() and 0xFF) as Class<*>
+                        val message = messageType.getConstructor().newInstance() as Schema
+                        message.decode(bytes, Iterator(2))
+                        val messageHandler = onMessageHandlers["s" + messageType.typeName] as MessageHandler<Any>?
+                        if (messageHandler != null) {
+                            messageHandler.handler?.invoke(message)
+                        } else {
+                            println("No handler for type " + messageType.typeName)
+                        }
+                    } catch (e: Exception) {
+                        onError?.invoke(-1, e.message)
                     }
                 }
                 Protocol.LEAVE_ROOM -> leave()
@@ -101,10 +124,10 @@ class Room<T : Schema> internal constructor(schema: Class<T>, var name: String) 
                     val it = Iterator(1)
                     if (Decoder.numberCheck(bytes, it)) {
                         type = Decoder.decodeNumber(bytes, it).toInt()
-                        messageHandler = onMessageHandlers["i$type"]
+                        messageHandler = onMessageHandlers["i$type"] as MessageHandler<Any>?
                     } else {
                         type = Decoder.decodeString(bytes, it)
-                        messageHandler = onMessageHandlers[type.toString()]
+                        messageHandler = onMessageHandlers[type.toString()] as MessageHandler<Any>?
                     }
                     if (messageHandler != null) {
                         if (bytes.size > it.offset) {
@@ -196,8 +219,18 @@ class Room<T : Schema> internal constructor(schema: Class<T>, var name: String) 
     ) {
         onMessageHandlers[type] = MessageHandler(
                 MessageType::class.java,
-                handler as ((Any) -> Unit)?
+                handler
         )
+    }
+
+    public fun <MessageType> onMessage(
+            type: String,
+            clazz: Class<MessageType>,
+            handler: Function1Void<MessageType>?,
+    ) {
+        onMessageHandlers[type] = MessageHandler(
+                clazz
+        ) { message -> handler?.invoke(message) }
     }
 
     public inline fun <reified MessageType> onMessage(
@@ -206,8 +239,18 @@ class Room<T : Schema> internal constructor(schema: Class<T>, var name: String) 
     ) {
         onMessageHandlers["i$type"] = MessageHandler(
                 MessageType::class.java,
-                handler as ((Any) -> Unit)?
+                handler
         )
+    }
+
+    public fun <MessageType> onMessage(
+            type: Int,
+            clazz: Class<MessageType>,
+            handler: Function1Void<MessageType>?,
+    ) {
+        onMessageHandlers["i$type"] = MessageHandler(
+                clazz
+        ) { message -> handler?.invoke(message) }
     }
 
     public inline fun <reified MessageType> onMessage(
@@ -215,8 +258,17 @@ class Room<T : Schema> internal constructor(schema: Class<T>, var name: String) 
     ) {
         onMessageHandlers["s" + MessageType::class.java.name] = MessageHandler(
                 MessageType::class.java,
-                handler as ((Any) -> Unit)?
+                handler
         )
+    }
+
+    public fun <MessageType> onMessage(
+            clazz: Class<MessageType>,
+            handler: Function1Void<MessageType>?,
+    ) {
+        onMessageHandlers["s" + clazz.name] = MessageHandler(
+                clazz
+        ) { message -> handler?.invoke(message) }
     }
 
     public fun hasJoined(): Boolean {

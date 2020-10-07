@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import io.colyseus.async.ColyseusAsync
 import io.colyseus.serializer.schema.Schema
 import io.colyseus.util.Http.request
+import io.colyseus.util.callbacks.Function1Void
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.UnsupportedEncodingException
@@ -52,8 +53,8 @@ class Client(private val endpoint: String) {
             options: LinkedHashMap<String, Any>? = null,
             httpHeaders: MutableMap<String, String>? = null,
             wsHeaders: Map<String, String>? = null,
-            callback: (Room<T>) -> Unit,
-            onError: (Exception) -> Unit,
+            callback: Function1Void<Room<T>>,
+            onError: Function1Void<Exception>,
     ) {
         ColyseusAsync.launch {
             try {
@@ -97,8 +98,8 @@ class Client(private val endpoint: String) {
             options: LinkedHashMap<String, Any>? = null,
             httpHeaders: MutableMap<String, String>? = null,
             wsHeaders: Map<String, String>? = null,
-            callback: (Room<T>) -> Unit,
-            onError: (Exception) -> Unit,
+            callback: Function1Void<Room<T>>,
+            onError: Function1Void<Exception>,
     ) {
         ColyseusAsync.launch {
             try {
@@ -142,8 +143,8 @@ class Client(private val endpoint: String) {
             options: LinkedHashMap<String, Any>? = null,
             httpHeaders: MutableMap<String, String>? = null,
             wsHeaders: Map<String, String>? = null,
-            callback: (Room<T>) -> Unit,
-            onError: (Exception) -> Unit,
+            callback: Function1Void<Room<T>>,
+            onError: Function1Void<Exception>,
     ) {
         ColyseusAsync.launch {
             try {
@@ -187,8 +188,8 @@ class Client(private val endpoint: String) {
             options: LinkedHashMap<String, Any>? = null,
             httpHeaders: MutableMap<String, String>? = null,
             wsHeaders: Map<String, String>? = null,
-            callback: (Room<T>) -> Unit,
-            onError: (Exception) -> Unit,
+            callback: Function1Void<Room<T>>,
+            onError: Function1Void<Exception>,
     ) {
         ColyseusAsync.launch {
             try {
@@ -234,8 +235,8 @@ class Client(private val endpoint: String) {
             sessionId: String,
             httpHeaders: MutableMap<String, String>? = null,
             wsHeaders: Map<String, String>? = null,
-            callback: (Room<T>) -> Unit,
-            onError: (Exception) -> Unit,
+            callback: Function1Void<Room<T>>,
+            onError: Function1Void<Exception>,
     ) {
         ColyseusAsync.launch {
             try {
@@ -261,7 +262,7 @@ class Client(private val endpoint: String) {
         }
     }
 
-    fun getAvailableRooms(roomName: String, callback: (List<AvailableRoom>) -> Unit) {
+    fun getAvailableRooms(roomName: String, callback: Function1Void<List<AvailableRoom>>) {
         ColyseusAsync.launch {
             callback(getAvailableRoomsSync(roomName))
         }

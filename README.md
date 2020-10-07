@@ -6,7 +6,7 @@ Implementation of Colyseus client using Kotlin
 
 ```groovy
 dependencies {
-    implementation 'io.github.doorbash:colyseus-kotlin:0.14.0-alpha.9'
+    implementation 'io.github.doorbash:colyseus-kotlin:0.14.0-alpha.10'
 }
 ```
 
@@ -156,10 +156,7 @@ onMessage(2) { cell: Cell ->
 send("fire", Math.random() * 100)
 
 // Send a schema with type id
-val c = Cell()
-c.x = 100f
-c.y = 200f
-send(2, c)
+send(2, Cell().apply { x = 100f; y = 200f })
 
 // Send only the message type or type id
 send("hello")

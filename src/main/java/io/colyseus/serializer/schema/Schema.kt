@@ -6,6 +6,8 @@ import io.colyseus.serializer.schema.SPEC.SWITCH_TO_STRUCTURE
 import io.colyseus.serializer.schema.types.ArraySchema
 import io.colyseus.serializer.schema.types.MapSchema
 import io.colyseus.util.allFields
+import io.colyseus.util.callbacks.Function0Void
+import io.colyseus.util.callbacks.Function1Void
 import io.colyseus.util.get
 import io.colyseus.util.getType
 import io.colyseus.util.isPrimary
@@ -106,8 +108,16 @@ open class Schema : IRef {
     @JsonIgnore
     var onChange: ((changes: List<DataChange?>) -> Unit)? = null
 
+    public fun setOnChange(f: Function1Void<List<DataChange?>>) {
+        onChange = f::invoke
+    }
+
     @JsonIgnore
     var onRemove: (() -> Unit)? = null
+
+    public fun setOnRemove(f: Function0Void) {
+        onRemove = f::invoke
+    }
 
     @JsonIgnore
     public override var __refId: Int = 0
@@ -123,8 +133,8 @@ open class Schema : IRef {
             if (!field.isAnnotationPresent(SchemaField::class.java)) continue
             field.isAccessible = true
             val fieldName = field.name
-            val v1 = field.getAnnotation(SchemaField::class.java).v1
-            val v2 = field.getAnnotation(SchemaField::class.java).v2
+            val v1 = field.getAnnotation(SchemaField::class.java).type
+            val v2 = field.getAnnotation(SchemaField::class.java).ref
 
             val parts = v1.split("/").toTypedArray()
             val fieldIndex = parts[0].toInt()

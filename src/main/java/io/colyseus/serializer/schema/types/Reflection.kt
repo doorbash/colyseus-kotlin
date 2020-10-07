@@ -17,7 +17,7 @@ class SchemaReflectionField : Schema() {
 
 
 class SchemaReflectionType : Schema() {
-    @SchemaField(v1 = "0/uint8", Int::class)
+    @SchemaField(type = "0/uint8", Int::class)
     var id = 0
 
     @SchemaField("1/array/ref", SchemaReflectionField::class)

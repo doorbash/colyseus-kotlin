@@ -5,7 +5,11 @@ import io.colyseus.serializer.schema.types.MapSchema
 
 class ReferenceTracker {
     var refs = HashMap<Int, IRef?>()
-    var refCounts = HashMap<Int, Int>()
+    var refCounts = object : HashMap<Int, Int>() {
+        override fun get(key: Int): Int {
+            return super.getOrDefault(key, 0)
+        }
+    }
     var deletedRefs = mutableListOf<Int>()
 
     public fun add(refId: Int, _ref: IRef, incrementCount: Boolean = true) {
