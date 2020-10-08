@@ -20,7 +20,7 @@ fun main() = runBlocking {
         state.players.onRemove = { player: Player?, key: Int? ->
             println("player removed: " + key + "  " + player?.x)
 
-            send(2, Cell().apply { x == 100f; y = 200f })
+            send(2, Cell().apply { x = 100f; y = 200f })
         }
 
         onLeave = { code -> println("onLeave $code") }
