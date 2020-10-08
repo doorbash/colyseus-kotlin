@@ -133,10 +133,10 @@ open class Schema : IRef {
             if (!field.isAnnotationPresent(SchemaField::class.java)) continue
             field.isAccessible = true
             val fieldName = field.name
-            val v1 = field.getAnnotation(SchemaField::class.java).type
-            val v2 = field.getAnnotation(SchemaField::class.java).ref
+            val type = field.getAnnotation(SchemaField::class.java).type
+            val ref = field.getAnnotation(SchemaField::class.java).ref
 
-            val parts = v1.split("/").toTypedArray()
+            val parts = type.split("/").toTypedArray()
             val fieldIndex = parts[0].toInt()
             val schemaFieldTypeName = parts[1]
 
@@ -144,16 +144,16 @@ open class Schema : IRef {
             fieldTypeNames[fieldName] = schemaFieldTypeName
 
             if (isPrimary(schemaFieldTypeName)) {
-                fieldTypes[fieldName] = v2.java
+                fieldTypes[fieldName] = ref.java
             } else if (schemaFieldTypeName == "ref") {
-                fieldTypes[fieldName] = v2.java
-                fieldChildTypes[fieldName] = v2.java
+                fieldTypes[fieldName] = ref.java
+                fieldChildTypes[fieldName] = ref.java
             } else {
                 // array, map
                 fieldTypes[fieldName] = getType(schemaFieldTypeName)
                 fieldChildPrimitiveTypes[fieldName] = parts[2]
-                fieldChildTypes[fieldName] = v2.java
-                if (v2 == Any::class && parts[2] != "ref") {
+                fieldChildTypes[fieldName] = ref.java
+                if (ref == Any::class && parts[2] != "ref") {
                     fieldChildTypes[fieldName] = getType(parts[2])
                 }
             }

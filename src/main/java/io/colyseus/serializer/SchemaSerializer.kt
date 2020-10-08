@@ -53,9 +53,9 @@ class SchemaSerializer<T : Schema>(val schema: Class<T>) {
                     if (!field.isAnnotationPresent(SchemaField::class.java)) continue
                     field.isAccessible = true
                     if (field.name == f?.name) {
-                        val v2 = field.getAnnotation(SchemaField::class.java).ref
-                        if (v2 == Any::class) throw Exception("Schema error at: ${schema.simpleName}.${field.name}")
-                        initTypes(reflection, f?.referencedType!!, v2.java)
+                        val ref = field.getAnnotation(SchemaField::class.java).ref
+                        if (ref == Any::class) throw Exception("Schema error at: ${schema.simpleName}.${field.name}")
+                        initTypes(reflection, f?.referencedType!!, ref.java)
                         break
                     }
                 }
