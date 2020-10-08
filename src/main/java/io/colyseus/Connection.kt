@@ -9,14 +9,12 @@ import java.net.URI
 import java.nio.ByteBuffer
 import java.util.*
 
+private const val CONNECT_TIMEOUT = 10000
+
 class Connection internal constructor(
         uri: URI,
         httpHeaders: Map<String, String>? = null,
 ) : WebSocketClient(uri, Draft_6455(), httpHeaders, CONNECT_TIMEOUT) {
-
-    companion object {
-        private const val CONNECT_TIMEOUT = 10000
-    }
 
     var onError: ((e: Exception) -> Unit)? = null
     var onClose: ((code: Int, reason: String?, remote: Boolean) -> Unit)? = null
@@ -43,10 +41,8 @@ class Connection internal constructor(
     }
 
     override fun onOpen(handshakedata: ServerHandshake) {
-        if (_enqueuedCalls.size > 0) {
-            for (objects in _enqueuedCalls) {
-                _send(objects)
-            }
+        if (!_enqueuedCalls.isEmpty()) {
+            _enqueuedCalls.forEach(this::_send)
             _enqueuedCalls.clear()
         }
         onOpen?.invoke()
