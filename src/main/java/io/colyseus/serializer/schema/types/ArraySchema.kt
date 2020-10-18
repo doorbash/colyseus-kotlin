@@ -7,12 +7,16 @@ import io.colyseus.serializer.schema.ReferenceTracker
 import io.colyseus.serializer.schema.Schema
 import io.colyseus.util.callbacks.Function2Void
 import io.colyseus.util.default
+import java.util.*
 
 class ArraySchema<T : Any?>(
         @JsonIgnore public var ct: Class<T>?,
-) : ArrayList<T?>(), ISchemaCollection, IRef {
+) : ArrayList<T?>(), ISchemaCollection, IRef, Iterable<T?> {
 
     constructor() : this(null)
+
+    @JsonIgnore
+    private val items: TreeMap<Int, T?> = TreeMap()
 
     @JsonIgnore
     var onAdd: ((value: T, key: Int) -> Unit)? = null
@@ -43,22 +47,36 @@ class ArraySchema<T : Any?>(
     public override var __parent: IRef? = null
 
     public override fun setIndex(index: Int, dynamicIndex: Any) {
-//        println("setIndex index=" + index + " dynamicIndex=" + dynamicIndex)
+//        println("setIndex index=$index dynamicIndex=$dynamicIndex")
     }
 
     public override fun setByIndex(index: Int, dynamicIndex: Any, value: Any?) {
-        val ind = dynamicIndex as Int
+//        val ind = dynamicIndex as Int
 
-        if (ind < 0) return
+//        if (ind < 0) return
+//
+//        if (ind < size) {
+//            this[ind] = value as T?
+//            return
+//        }
 
-        if (ind < size) {
-            this[ind] = value as T?
-            return
-        }
+//        val s = size
+//        for (i in s until ind) add(null)
+//        add(value as T?)
 
-        val s = size
-        for (i in s until ind) add(null)
-        add(value as T?)
+        items[dynamicIndex as Int] = value as T?
+    }
+
+//    override fun put(key: Int, value: T?): T? {
+//        val value = super.put(key, value)
+//        valuesList = values.toList()
+//        return value
+//    }
+
+    public override operator fun get(key: Int): T? {
+        // FIXME: should be O(1)
+        if (key >= size) return null
+        return items.values.toList().get(key)
     }
 
     public override fun getIndex(index: Int): Int? {
@@ -70,19 +88,20 @@ class ArraySchema<T : Any?>(
     }
 
     public override fun deleteByIndex(index: Int) {
-        if (index < 0 || index >= size) return
-        this.removeAt(index)
+//        if (index < 0 || index >= size) return
+//        this.removeAt(index)
+        // TODO
+        items.remove(index)
     }
 
     public override fun _clear(refs: ReferenceTracker?) {
         if (refs != null && hasSchemaChild()) {
-            for (item in this) {
+            for (item in this.items.values) {
                 if (item == null) continue
                 refs.remove((item as Schema).__refId)
             }
         }
-
-        super.clear()
+        items.clear()
     }
 
     public override fun _clone(): ISchemaCollection {
@@ -147,4 +166,32 @@ class ArraySchema<T : Any?>(
     override fun invokeOnRemove(item: Any, index: Any) {
         onRemove?.invoke(item as T, index as Int)
     }
+
+    override fun toString(): String {
+        return items.values.toString()
+    }
+
+    override fun iterator(): MutableIterator<T?> {
+        return items.values.iterator()
+    }
+
+    override fun add(element: T?): Boolean {
+        items[try { items.keys.last() } catch (e: NoSuchElementException) { -1 } + 1] = element
+        return true
+    }
+
+    override fun set(index: Int, element: T?): T? {
+        if (index > items.size) return null
+        if (index == items.size) {
+            add(element)
+            return element
+        }
+        val key = items.keys.toList()[index]
+        items.put(key, element)
+        return element
+    }
+
+
+    override val size: Int
+        get() = items.size
 }

@@ -229,7 +229,7 @@ class SchemaDeserializerTest {
         val client2 = schema.filtered_types.State()
         client2.decode(byteArrayOfInts(255, 0, 130, 1, 129, 3, 129, 3, 255, 1, 128, 1, 5, 255, 3, 128, 163, 116, 119, 111, 255, 3, 128, 163, 116, 119, 111, 255, 5, 128, 163, 116, 119, 111))
         assertEquals("two", client2.playerTwo.name)
-        assertEquals("two", client2.players[1]?.name)
+        assertEquals("two", client2.players[0]?.name)
         assertEquals(null, client2.playerOne.name)
     }
 
