@@ -19,10 +19,6 @@ public class Main {
                 room.send("fire", "in the hole!");
             });
 
-            room.setOnJoin(() -> {
-                System.out.println("onJoin()");
-            });
-
             room.setOnLeave(code -> {
                 System.out.println("onLeave(" + code + ")");
             });

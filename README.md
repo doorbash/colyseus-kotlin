@@ -105,8 +105,6 @@ onError = { code, message ->
     println("onError $code $message")
 }
 
-onJoin = { println("onJoin") }
-
 onStateChange = { state, isFirstState ->
     println("OnStateChange")
     println(isFirstState)

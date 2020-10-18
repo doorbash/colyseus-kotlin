@@ -29,7 +29,6 @@ fun main() {
                 println(code)
                 println(message)
             }
-            onJoin = { println("onJoin") }
 
 //            onStateChange = { state, isFirstState ->
 //                println("OnStateChange")
