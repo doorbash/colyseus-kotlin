@@ -17,7 +17,7 @@ apply plugin: 'com.novoda.bintray-release'
 apply plugin: 'kotlin'
 
 group 'io.github.doorbash'
-version '0.14.0-alpha.15'
+version '0.14.0-alpha.16'
 
 repositories {
     mavenCentral()
@@ -35,7 +35,7 @@ dependencies {
 publish {
     def groupProjectID = 'io.github.doorbash'
     def artifactProjectID = 'colyseus-kotlin'
-    def publishVersionID = '0.14.0-alpha.15'
+    def publishVersionID = '0.14.0-alpha.16'
     userOrg = 'doorbash'
     repoName = 'io.github.doorbash'
     groupId = groupProjectID
