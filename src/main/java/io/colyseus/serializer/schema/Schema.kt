@@ -277,7 +277,7 @@ open class Schema : IRef {
 
                 // Flag `refId` for garbage collection.
                 if (previousValue != null && previousValue is IRef) {
-                    refs.remove((previousValue as IRef).__refId!!)
+                    refs.remove(previousValue.__refId)
                 }
 
                 value = null
@@ -414,7 +414,7 @@ open class Schema : IRef {
     }
 
     public fun triggerAll() {
-        var allChanges = HashMap<Any, Any>()
+        val allChanges = HashMap<Any, Any>()
         triggerAllFillChanges(this, allChanges)
         triggerChanges(allChanges)
     }
@@ -426,7 +426,7 @@ open class Schema : IRef {
             return
         }
 
-        var changes = arrayListOf<DataChange>()
+        val changes = arrayListOf<DataChange>()
         allChanges[currentRef.__refId as Any] = changes
 
         if (currentRef is Schema) {

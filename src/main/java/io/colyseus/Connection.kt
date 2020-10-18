@@ -22,7 +22,9 @@ class Connection internal constructor(
     var onMessage: ((bytes: ByteBuffer) -> Unit)? = null
 
     private val _enqueuedCalls = LinkedList<Any>()
-    private val msgpackMapper: ObjectMapper = ObjectMapper(MessagePackFactory())
+    private val msgpackMapper: ObjectMapper = ObjectMapper(MessagePackFactory())/*.apply {
+        setConfig(this.deserializationConfig.withFeatures(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT))
+    }*/
 
     fun _send(data: Any) {
         if (isOpen) {
