@@ -105,11 +105,11 @@ class Room<T : Schema> internal constructor(schema: Class<T>, var name: String) 
                         val messageType: Class<*> = Context.instance.get(bytes[1].toInt() and 0xFF) as Class<*>
                         val message = messageType.getConstructor().newInstance() as Schema
                         message.decode(bytes, Iterator(2))
-                        val messageHandler = onMessageHandlers["s" + messageType.typeName] as MessageHandler<Any>?
+                        val messageHandler = onMessageHandlers["s" + messageType.name] as MessageHandler<Any>?
                         if (messageHandler != null) {
                             messageHandler.handler?.invoke(message)
                         } else {
-                            println("No handler for type " + messageType.typeName)
+                            println("No handler for type " + messageType.name)
                         }
                     } catch (e: Exception) {
                         onError?.invoke(-1, e.message)
