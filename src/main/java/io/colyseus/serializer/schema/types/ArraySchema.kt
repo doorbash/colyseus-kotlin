@@ -11,7 +11,7 @@ import java.util.*
 
 class ArraySchema<T : Any?>(
         @JsonIgnore public var ct: Class<T>?,
-) : ArrayList<T?>(), ISchemaCollection, IRef, Iterable<T?> {
+) : ArrayList<T?>(), ISchemaCollection, IRef {
 
     constructor() : this(null)
 
@@ -190,7 +190,6 @@ class ArraySchema<T : Any?>(
         items.put(key, element)
         return element
     }
-
 
     override val size: Int
         get() = items.size
