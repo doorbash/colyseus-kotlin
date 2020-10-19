@@ -99,10 +99,15 @@ public interface IRef {
 
 open class Schema : IRef {
 
+    @JsonIgnore
     val fieldsByIndex = HashMap<Int, String?>()
+    @JsonIgnore
     val fieldTypes = HashMap<String, Class<*>?>()
+    @JsonIgnore
     val fieldTypeNames = HashMap<String, String?>()
+    @JsonIgnore
     val fieldChildPrimitiveTypes = HashMap<String, String?>()
+    @JsonIgnore
     val fieldChildTypes = HashMap<String, Class<*>?>()
 
     @JsonIgnore
