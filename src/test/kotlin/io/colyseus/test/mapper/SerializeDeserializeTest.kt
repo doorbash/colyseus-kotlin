@@ -1,7 +1,9 @@
 package io.colyseus.test.mapper
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import io.colyseus.test.mapper.types.PrimitivesTest
+import io.colyseus.test.mapper.types.Cell
+import io.colyseus.test.mapper.types.MyState
+import io.colyseus.test.mapper.types.Player
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.msgpack.jackson.dataformat.MessagePackFactory
@@ -11,156 +13,181 @@ class SerializeDeserializeTest {
     fun `json serialize test`() {
         val objectMapper = ObjectMapper()
 
-        PrimitivesTest().apply {
-            _uint8 = 0xFF
-            _uint16 = 0xFFFF
-            _uint32 = 0xFFFFFF
-            _uint64 = 0xFFFFFFFF
-            _int8 = Byte.MAX_VALUE
-            _int16 = Short.MAX_VALUE
-            _int32 = Int.MAX_VALUE
-            _int64 = Long.MAX_VALUE
-            _float32_1 = Float.MIN_VALUE
-            _float32_2 = Float.MAX_VALUE
-            _float64_1 = Double.MIN_VALUE
-            _float64_2 = Double.MAX_VALUE
-            _boolean = true
-            _string1 = "hello world!"
-            _string2 = null
-        }.apply {
-            val serialized = objectMapper.writeValueAsString(this)
+        val serialized = objectMapper.writeValueAsString(createMyState())
 
-            println(serialized)
+        println(serialized)
 
-            val deserialized = objectMapper.readValue(serialized, LinkedHashMap::class.java)
+        val deserialized = objectMapper.readValue(serialized, LinkedHashMap::class.java)
 
-            assertEquals(15, deserialized.keys.size)
-            assertEquals(0xFF, deserialized["_uint8"])
-            assertEquals(0xFFFF, deserialized["_uint16"])
-            assertEquals(0xFFFFFF, deserialized["_uint32"])
-            assertEquals(0xFFFFFFFF, deserialized["_uint64"])
-            assertEquals(Byte.MAX_VALUE.toInt(), deserialized["_int8"])
-            assertEquals(Short.MAX_VALUE.toInt(), deserialized["_int16"])
-            assertEquals(Int.MAX_VALUE, deserialized["_int32"])
-            assertEquals(Long.MAX_VALUE, deserialized["_int64"])
-            assertEquals(Float.MIN_VALUE.toString().toDouble(), deserialized["_float32_1"])
-            assertEquals(Float.MAX_VALUE.toString().toDouble(), deserialized["_float32_2"])
-            assertEquals(Double.MIN_VALUE, deserialized["_float64_1"])
-            assertEquals(Double.MAX_VALUE, deserialized["_float64_2"])
-            assertEquals(true, deserialized["_boolean"])
-            assertEquals("hello world!", deserialized["_string1"])
-            assertEquals(null, deserialized["_string2"])
-        }
+        assertMyState(deserialized as LinkedHashMap<String, Any>)
     }
 
     @Test
-    fun `json deserialize test`() {
-        val objectMapper = ObjectMapper()
-        val serialized = """
-                {
-                   "_uint8":255,
-                   "_uint16":65535,
-                   "_uint32":16777215,
-                   "_uint64":4294967295,
-                   "_int8":127,
-                   "_int16":32767,
-                   "_int32":2147483647,
-                   "_int64":9223372036854775807,
-                   "_float32_1":1.4E-45,
-                   "_float32_2":3.4028235E38,
-                   "_float64_1":4.9E-324,
-                   "_float64_2":1.7976931348623157E308,
-                   "_boolean":true,
-                   "_string1":"hello world!",
-                   "_string2":null
-                }""".trimIndent()
-
-        with(objectMapper.readValue(serialized, PrimitivesTest::class.java)) {
-            assertEquals(0xFF, _uint8)
-            assertEquals(0xFFFF, _uint16)
-            assertEquals(0xFFFFFF, _uint32)
-            assertEquals(0xFFFFFFFF, _uint64)
-            assertEquals(Byte.MAX_VALUE, _int8)
-            assertEquals(Short.MAX_VALUE, _int16)
-            assertEquals(Int.MAX_VALUE, _int32)
-            assertEquals(Long.MAX_VALUE, _int64)
-            assertEquals(Float.MIN_VALUE, _float32_1)
-            assertEquals(Float.MAX_VALUE, _float32_2)
-            assertEquals(Double.MIN_VALUE, _float64_1)
-            assertEquals(Double.MAX_VALUE, _float64_2)
-            assertEquals(true, _boolean)
-            assertEquals("hello world!", _string1)
-            assertEquals(null, _string2)
-        }
-    }
-
-    @Test
-    fun `messagepack serialize test`() {
+    fun `msgpack serialize test`() {
         val objectMapper = ObjectMapper(MessagePackFactory())
 
-        PrimitivesTest().apply {
-            _uint8 = 0xFF
-            _uint16 = 0xFFFF
-            _uint32 = 0xFFFFFF
-            _uint64 = 0xFFFFFFFF
-            _int8 = Byte.MAX_VALUE
-            _int16 = Short.MAX_VALUE
-            _int32 = Int.MAX_VALUE
-            _int64 = Long.MAX_VALUE
-            _float32_1 = Float.MIN_VALUE
-            _float32_2 = Float.MAX_VALUE
-            _float64_1 = Double.MIN_VALUE
-            _float64_2 = Double.MAX_VALUE
-            _boolean = true
-            _string1 = "hello world!"
-            _string2 = null
-        }.apply {
-            val serialized = objectMapper.writeValueAsBytes(this)
+        val serialized = objectMapper.writeValueAsBytes(createMyState())
 
-            println(serialized.contentToString())
+        println(serialized.contentToString())
 
-            val deserialized = objectMapper.readValue(serialized, LinkedHashMap::class.java)
+        val deserialized = objectMapper.readValue(serialized, LinkedHashMap::class.java)
 
-            assertEquals(15, deserialized.keys.size)
-            assertEquals(0xFF, deserialized["_uint8"])
-            assertEquals(0xFFFF, deserialized["_uint16"])
-            assertEquals(0xFFFFFF, deserialized["_uint32"])
-            assertEquals(0xFFFFFFFF, deserialized["_uint64"])
-            assertEquals(Byte.MAX_VALUE.toInt(), deserialized["_int8"])
-            assertEquals(Short.MAX_VALUE.toInt(), deserialized["_int16"])
-            assertEquals(Int.MAX_VALUE, deserialized["_int32"])
-            assertEquals(Long.MAX_VALUE, deserialized["_int64"])
-            assertEquals(Float.MIN_VALUE.toDouble(), deserialized["_float32_1"])
-            assertEquals(Float.MAX_VALUE.toDouble(), deserialized["_float32_2"])
-            assertEquals(Double.MIN_VALUE, deserialized["_float64_1"])
-            assertEquals(Double.MAX_VALUE, deserialized["_float64_2"])
-            assertEquals(true, deserialized["_boolean"])
-            assertEquals("hello world!", deserialized["_string1"])
-            assertEquals(null, deserialized["_string2"])
+        assertMyState(deserialized as LinkedHashMap<String, Any>)
+    }
+
+    fun createMyState(): MyState {
+        return MyState().apply {
+            player = Player().apply {
+                _uint8 = 0xFF
+                _uint16 = 0xFFFF
+                _uint32 = 0xFFFFFF
+                _uint64 = 0xFFFFFFFF
+                _int8 = 100.toByte()
+                _int16 = 100.toShort()
+                _int32 = 100
+                _int64 = 100L
+                _float32_1 = 100f
+                _float32_2 = 200f
+                _float64_1 = 100.0
+                _float64_2 = 200.0
+                _number = 100f
+                _boolean = true
+                _string1 = "hello world!"
+                _string2 = ""
+                _string3 = null
+
+                with(arrayOfCells) {
+                    repeat(5) {
+                        add(Cell().apply { x = 100f; y = 200f; })
+                    }
+                }
+
+                with(mapOfCells) {
+                    var i = 0
+                    repeat(5) {
+                        put("index_$i", Cell().apply { x = 100f; y = 200f; })
+                        i++
+                    }
+                }
+
+                with(arrayOfPrimitives) {
+                    repeat(10) {
+                        add(Math.random().toFloat() * 1000)
+                    }
+                }
+                with(mapOfPrimitives) {
+                    var i = 0
+                    repeat(10) {
+                        put("index_$i", Math.random().toFloat() * 1000)
+                        i++
+                    }
+                }
+            }
+            with(arrayOfPlayers) {
+                repeat(5) {
+                    add(player)
+                }
+            }
+            with(mapOfPlayers) {
+                var i = 0
+                repeat(5) {
+                    put("index_$i", player)
+                    i++
+                }
+            }
+            with(arrayOfPrimitives) {
+                repeat(10) {
+                    add(Math.random().toFloat() * 1000)
+                }
+            }
+            with(mapOfPrimitives) {
+                var i = 0
+                repeat(10) {
+                    put("index_$i", Math.random().toFloat() * 1000)
+                    i++
+                }
+            }
         }
     }
 
-    @Test
-    fun `messagepack deserialize test`() {
-        val objectMapper = ObjectMapper(MessagePackFactory())
-        val serialized = byteArrayOf(-113, -90, 95, 117, 105, 110, 116, 56, -52, -1, -89, 95, 117, 105, 110, 116, 49, 54, -51, -1, -1, -89, 95, 117, 105, 110, 116, 51, 50, -50, 0, -1, -1, -1, -89, 95, 117, 105, 110, 116, 54, 52, -50, -1, -1, -1, -1, -91, 95, 105, 110, 116, 56, 127, -90, 95, 105, 110, 116, 49, 54, -51, 127, -1, -90, 95, 105, 110, 116, 51, 50, -50, 127, -1, -1, -1, -90, 95, 105, 110, 116, 54, 52, -49, 127, -1, -1, -1, -1, -1, -1, -1, -86, 95, 102, 108, 111, 97, 116, 51, 50, 95, 49, -54, 0, 0, 0, 1, -86, 95, 102, 108, 111, 97, 116, 51, 50, 95, 50, -54, 127, 127, -1, -1, -86, 95, 102, 108, 111, 97, 116, 54, 52, 95, 49, -53, 0, 0, 0, 0, 0, 0, 0, 1, -86, 95, 102, 108, 111, 97, 116, 54, 52, 95, 50, -53, 127, -17, -1, -1, -1, -1, -1, -1, -88, 95, 98, 111, 111, 108, 101, 97, 110, -61, -88, 95, 115, 116, 114, 105, 110, 103, 49, -84, 104, 101, 108, 108, 111, 32, 119, 111, 114, 108, 100, 33, -88, 95, 115, 116, 114, 105, 110, 103, 50, -64)
-
-        with(objectMapper.readValue(serialized, PrimitivesTest::class.java)) {
-            assertEquals(0xFF, _uint8)
-            assertEquals(0xFFFF, _uint16)
-            assertEquals(0xFFFFFF, _uint32)
-            assertEquals(0xFFFFFFFF, _uint64)
-            assertEquals(Byte.MAX_VALUE, _int8)
-            assertEquals(Short.MAX_VALUE, _int16)
-            assertEquals(Int.MAX_VALUE, _int32)
-            assertEquals(Long.MAX_VALUE, _int64)
-            assertEquals(Float.MIN_VALUE, _float32_1)
-            assertEquals(Float.MAX_VALUE, _float32_2)
-            assertEquals(Double.MIN_VALUE, _float64_1)
-            assertEquals(Double.MAX_VALUE, _float64_2)
-            assertEquals(true, _boolean)
-            assertEquals("hello world!", _string1)
-            assertEquals(null, _string2)
+    fun assertMyState(myState: LinkedHashMap<String, Any>) {
+        assertEquals(5, myState.keys.size)
+        assertPlayer(myState["player"] as LinkedHashMap<String, Any>)
+        with(myState["arrayOfPlayers"] as ArrayList<LinkedHashMap<String, Any>>) {
+            assertEquals(5, size)
+            forEach {
+                assertPlayer(it)
+            }
         }
+        with(myState["mapOfPlayers"] as LinkedHashMap<String, Any>) {
+            assertEquals(5, size)
+            forEach {
+                assertPlayer(it.value as LinkedHashMap<String, Any>)
+            }
+        }
+        with(myState["arrayOfPrimitives"] as ArrayList<Any>) {
+            assertEquals(10, size)
+            forEach {
+                assertEquals(true, it is Double)
+            }
+        }
+        with(myState["mapOfPrimitives"] as LinkedHashMap<String, Any>) {
+            assertEquals(10, size)
+            forEach {
+                assertEquals(true, it.value is Double)
+            }
+        }
+    }
+
+    fun assertPlayer(player: LinkedHashMap<String, Any>) {
+        assertEquals(21, player.keys.size)
+        assertEquals(0xFF, player["_uint8"])
+        assertEquals(0xFFFF, player["_uint16"])
+        assertEquals(0xFFFFFF, player["_uint32"])
+        assertEquals(0xFFFFFFFF, player["_uint64"])
+        assertEquals(100, player["_int8"])
+        assertEquals(100, player["_int16"])
+        assertEquals(100, player["_int32"])
+        assertEquals(100, player["_int64"])
+        assertEquals(100.0, player["_float32_1"])
+        assertEquals(200.0, player["_float32_2"])
+        assertEquals(100.0, player["_float64_1"])
+        assertEquals(200.0, player["_float64_2"])
+        assertEquals(100.0, player["_number"])
+        assertEquals(true, player["_boolean"])
+        assertEquals("hello world!", player["_string1"])
+        assertEquals("", player["_string2"])
+        assertEquals(null, player["_string3"])
+
+        with(player["arrayOfCells"] as ArrayList<LinkedHashMap<String, Any>>) {
+            assertEquals(5, size)
+            forEach {
+                assertCell(it)
+            }
+        }
+        with(player["mapOfCells"] as LinkedHashMap<String, Any>) {
+            assertEquals(5, size)
+            forEach {
+                assertCell(it.value as LinkedHashMap<String, Any>)
+            }
+        }
+        with(player["arrayOfPrimitives"] as ArrayList<Any>) {
+            assertEquals(10, size)
+            forEach {
+                assertEquals(true, it is Double)
+            }
+        }
+        with(player["mapOfPrimitives"] as LinkedHashMap<String, Any>) {
+            assertEquals(10, size)
+            forEach {
+                assertEquals(true, it.value is Double)
+            }
+        }
+    }
+
+    fun assertCell(cell: LinkedHashMap<String, Any>) {
+        assertEquals(2, cell.keys.size)
+        assertEquals(100.0, cell["x"])
+        assertEquals(200.0, cell["y"])
     }
 }
