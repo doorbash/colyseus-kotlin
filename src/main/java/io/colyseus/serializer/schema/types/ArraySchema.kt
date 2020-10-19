@@ -84,7 +84,7 @@ class ArraySchema<T : Any?>(
     }
 
     public override fun getByIndex(index: Int): Any? {
-        return if (index < 0 || index >= size) null else this[index]
+        return this[index]
     }
 
     public override fun deleteByIndex(index: Int) {
@@ -92,6 +92,17 @@ class ArraySchema<T : Any?>(
 //        this.removeAt(index)
         // TODO
         items.remove(index)
+    }
+
+    override fun remove(element: T?): Boolean {
+        return items.values.remove(element)
+    }
+
+    override fun removeAt(index: Int): T? {
+        // FIXME: should be O(1)
+        if (index >= size) return null
+        val key = items.keys.toList().get(index)
+        return items.remove(key)
     }
 
     public override fun _clear(refs: ReferenceTracker?) {
@@ -176,7 +187,11 @@ class ArraySchema<T : Any?>(
     }
 
     override fun add(element: T?): Boolean {
-        items[try { items.keys.last() } catch (e: NoSuchElementException) { -1 } + 1] = element
+        items[try {
+            items.keys.last()
+        } catch (e: NoSuchElementException) {
+            -1
+        } + 1] = element
         return true
     }
 
