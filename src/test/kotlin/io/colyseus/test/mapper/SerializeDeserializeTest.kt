@@ -63,10 +63,8 @@ class SerializeDeserializeTest {
                 }
 
                 with(mapOfCells) {
-                    var i = 0
                     repeat(5) {
-                        put("index_$i", Cell().apply { x = 100f; y = 200f; })
-                        i++
+                        put("index_$it", Cell().apply { x = 100f; y = 200f; })
                     }
                 }
 
@@ -76,10 +74,8 @@ class SerializeDeserializeTest {
                     }
                 }
                 with(mapOfPrimitives) {
-                    var i = 0
                     repeat(10) {
-                        put("index_$i", Math.random().toFloat() * 1000)
-                        i++
+                        put("index_$it", Math.random().toFloat() * 1000)
                     }
                 }
             }
@@ -89,10 +85,8 @@ class SerializeDeserializeTest {
                 }
             }
             with(mapOfPlayers) {
-                var i = 0
                 repeat(5) {
-                    put("index_$i", player)
-                    i++
+                    put("index_$it", player)
                 }
             }
             with(arrayOfPrimitives) {
@@ -101,10 +95,8 @@ class SerializeDeserializeTest {
                 }
             }
             with(mapOfPrimitives) {
-                var i = 0
                 repeat(10) {
-                    put("index_$i", Math.random().toFloat() * 1000)
-                    i++
+                    put("index_$it", Math.random().toFloat() * 1000)
                 }
             }
         }
