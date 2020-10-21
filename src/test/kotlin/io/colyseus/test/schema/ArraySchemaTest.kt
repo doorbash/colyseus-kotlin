@@ -30,10 +30,12 @@ class ArraySchemaTest {
 
         assertEquals(arrayList.size, arraySchema.size)
 
+        // iterator test
         arraySchema.forEachIndexed { index, element ->
             assertEquals(element, arrayList[index])
         }
 
+        // get method test
         repeat(arrayList.size) {
             assertEquals(arraySchema[it], arrayList[it])
         }
