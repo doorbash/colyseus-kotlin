@@ -102,9 +102,11 @@ class Room<T : Schema> internal constructor(schema: Class<T>, var name: String) 
                 }
                 Protocol.ROOM_DATA_SCHEMA -> {
                     try {
-                        val messageType: Class<*> = Context.instance.get(bytes[1].toInt() and 0xFF) as Class<*>
+                        val it = Iterator(1)
+                        val typeId = Decoder.decodeNumber(bytes, it)
+                        val messageType: Class<*> = Context.instance[typeId.toInt()] as Class<*>
                         val message = messageType.getConstructor().newInstance() as Schema
-                        message.decode(bytes, Iterator(2))
+                        message.decode(bytes, it)
                         val messageHandler = onMessageHandlers["s" + messageType.name] as MessageHandler<Any>?
                         if (messageHandler != null) {
                             messageHandler.handler?.invoke(message)
