@@ -179,23 +179,6 @@ open class Schema : IRef {
         field?.set(this, value)
     }
 
-    /*
-    public void MoveEventHandlers(IRef previousInstance)
-    {
-        OnChange = ((Schema)previousInstance).OnChange;
-        OnRemove = ((Schema)previousInstance).OnRemove;
-
-        foreach (var item in ((Schema)previousInstance).fieldsByIndex)
-        {
-            var child = GetByIndex(item.Key);
-            if (child is IRef)
-            {
-                ((IRef)child).MoveEventHandlers((IRef)previousInstance.GetByIndex(item.Key));
-            }
-        }
-    }
-     */
-
     public override fun moveEventHandlers(previousValue: IRef) {
         onChange = (previousValue as Schema).onChange
         onRemove = previousValue.onRemove
