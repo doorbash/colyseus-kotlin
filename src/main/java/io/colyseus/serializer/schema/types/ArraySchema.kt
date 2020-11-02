@@ -11,7 +11,7 @@ import java.util.*
 
 class ArraySchema<T : Any?>(
         @JsonIgnore public var ct: Class<T>?,
-) : ArrayList<T?>(), ISchemaCollection, IRef {
+) : ArrayList<T?>(), ISchemaCollection {
 
     constructor() : this(null)
 
@@ -160,7 +160,7 @@ class ArraySchema<T : Any?>(
         }
     }
 
-    public override fun moveEventHandlers(previousInstance: ISchemaCollection) {
+    public override fun moveEventHandlers(previousInstance: IRef) {
         onAdd = (previousInstance as ArraySchema<T?>).onAdd
         onChange = previousInstance.onChange
         onRemove = previousInstance.onRemove

@@ -57,8 +57,7 @@ class DataChange(
         var previousValue: Any? = null,
 )
 
-public interface ISchemaCollection {
-    fun moveEventHandlers(previousInstance: ISchemaCollection)
+public interface ISchemaCollection : IRef {
     fun invokeOnAdd(item: Any, index: Any)
     fun invokeOnChange(item: Any, index: Any)
     fun invokeOnRemove(item: Any, index: Any)
@@ -94,6 +93,8 @@ public interface IRef {
     fun getByIndex(index: Int): Any?
 
     fun deleteByIndex(index: Int)
+
+    fun moveEventHandlers(Iref: IRef)
 }
 
 
@@ -176,6 +177,35 @@ open class Schema : IRef {
         val field = this::class.java[propertyName]
         field?.isAccessible = true
         field?.set(this, value)
+    }
+
+    /*
+    public void MoveEventHandlers(IRef previousInstance)
+    {
+        OnChange = ((Schema)previousInstance).OnChange;
+        OnRemove = ((Schema)previousInstance).OnRemove;
+
+        foreach (var item in ((Schema)previousInstance).fieldsByIndex)
+        {
+            var child = GetByIndex(item.Key);
+            if (child is IRef)
+            {
+                ((IRef)child).MoveEventHandlers((IRef)previousInstance.GetByIndex(item.Key));
+            }
+        }
+    }
+     */
+
+    public override fun moveEventHandlers(previousValue: IRef) {
+        onChange = (previousValue as Schema).onChange
+        onRemove = previousValue.onRemove
+
+        for(item in previousValue.fieldsByIndex) {
+            val child = getByIndex(item.key)
+            if(child is IRef) {
+                child.moveEventHandlers(previousValue.getByIndex(item.key) as IRef)
+            }
+        }
     }
 
     public fun decode(bytes: ByteArray, it: Iterator? = Iterator(0), refs: ReferenceTracker? = null) {
@@ -325,8 +355,7 @@ open class Schema : IRef {
                         value = createTypeInstance(concreteChildType)
 
                         if (previousValue != null) {
-                            (value as Schema).onChange = (previousValue as Schema).onChange
-                            value.onRemove = previousValue.onRemove
+                            (value as Schema).moveEventHandlers(previousValue as Schema)
 
                             if ((previousValue as IRef).__refId > 0 && refId != previousValue.__refId) {
                                 refs.remove((previousValue as IRef).__refId)

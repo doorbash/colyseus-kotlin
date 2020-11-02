@@ -11,7 +11,7 @@ import kotlin.collections.set
 
 class MapSchema<T : Any?>(
         @JsonIgnore public var ct: Class<T>?,
-) : LinkedHashMap<String, T?>(), ISchemaCollection, IRef {
+) : LinkedHashMap<String, T?>(), ISchemaCollection {
 
     constructor() : this(null)
 
@@ -157,7 +157,7 @@ class MapSchema<T : Any?>(
         }
     }
 
-    public override fun moveEventHandlers(previousInstance: ISchemaCollection) {
+    public override fun moveEventHandlers(previousInstance: IRef) {
         onAdd = (previousInstance as (MapSchema<T?>)).onAdd
         onChange = (previousInstance).onChange
         onRemove = (previousInstance).onRemove
