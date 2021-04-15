@@ -1,9 +1,5 @@
 build/
 .idea
-gradlew
-gradlew.bat
-gradle-wrapper.jar
-gradle-wrapper.properties
 .DS_Store
 .idea/shelf
 /confluence/target
