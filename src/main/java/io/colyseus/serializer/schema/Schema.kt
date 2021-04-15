@@ -197,14 +197,18 @@ open class Schema : IRef {
 
         if (it == null) it = Iterator()
         if (refs == null) refs = ReferenceTracker()
-        this.refs = refs
+
         val totalBytes = bytes.size
 
         var refId = 0
         var _ref: IRef? = this
+
+        this.refs = refs
+        refs.add(refId, _ref!!)
+
         var changes = arrayListOf<DataChange>()
-        val allChanges = hashMapOf<Any, Any>()
-        refs.add(refId, this)
+        val allChanges = linkedMapOf<Any, Any>()
+        allChanges[refId] = changes
 
         while (it.offset < totalBytes) {
             val _byte = bytes[it.offset++].toInt() and 0xFF
@@ -531,7 +535,7 @@ open class Schema : IRef {
 
     fun getSchemaType(bytes: ByteArray, it: Iterator, defaultType: Class<*>?): Class<*>? {
         var type: Class<*>? = defaultType
-        if (bytes[it.offset].toInt() and 0xFF == SPEC.TYPE_ID.value) {
+        if (it.offset < bytes.size && bytes[it.offset].toInt() and 0xFF == SPEC.TYPE_ID.value) {
             it.offset++
             val typeId: Int = Decoder.decodeNumber(bytes, it).toInt()
             type = Context.instance[typeId]
