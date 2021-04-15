@@ -272,4 +272,18 @@ class SchemaDeserializerTest {
         assertEquals(3, refs.refs.size)
 
     }
+
+    @Test
+    fun `map schema move nullify type test`(){
+        val state = io.colyseus.test.schema.map_schema_move_nullify_type.State()
+        val bytes = byteArrayOfInts(129, 1, 64, 255, 1, 128, 0, 161, 48, 0)
+
+        val refs = ReferenceTracker()
+        state.decode(bytes, null, refs)
+
+        // Assert.DoesNotThrow
+        // FIXME: this test only passes because empty
+        val moveAndNullifyBytes = byteArrayOfInts(128, 1, 65)
+        state.decode(moveAndNullifyBytes, null, refs)
+    }
 }
