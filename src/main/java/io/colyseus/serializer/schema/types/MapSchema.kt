@@ -48,7 +48,11 @@ class MapSchema<T : Any?>(
 
     override fun deleteByIndex(index: Int) {
         val dynamicIndex: String? = getIndex(index) as String?
-        if (contains(dynamicIndex)) {
+        //
+        // FIXME:
+        // The schema encoder should not encode a DELETE operation when using ADD + DELETE in the same key. (in the same patch)
+        //
+        if (dynamicIndex != null && contains(dynamicIndex)) {
             remove(dynamicIndex)
             indexes.remove(index)
         }
