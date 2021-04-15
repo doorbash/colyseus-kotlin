@@ -5,6 +5,9 @@ Implementation of Colyseus client using Kotlin
 ## Download
 
 ```groovy
+repositories {
+    maven { url 'https://jitpack.io' }
+}
 dependencies {
     implementation 'io.github.doorbash:colyseus-kotlin:0.14.2'
 }
