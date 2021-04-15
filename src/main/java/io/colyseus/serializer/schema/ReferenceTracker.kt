@@ -7,7 +7,7 @@ class ReferenceTracker {
     var refs = HashMap<Int, IRef?>()
     var refCounts = object : HashMap<Int, Int>() {
         override fun get(key: Int): Int {
-            return super.getOrDefault(key, 0)
+            return super.get(key) ?: 0
         }
     }
     var deletedRefs = mutableListOf<Int>()
