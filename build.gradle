@@ -5,7 +5,7 @@ buildscript {
     }
     dependencies {
         classpath 'com.novoda:bintray-release:0.9'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.4.32"
     }
 }
 
@@ -16,26 +16,23 @@ plugins {
 apply plugin: 'com.novoda.bintray-release'
 apply plugin: 'kotlin'
 
-group 'io.github.doorbash'
-version '0.14.1'
-
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    testImplementation "org.junit.jupiter:junit-jupiter:$junitVersion"
+    testImplementation "org.junit.jupiter:junit-jupiter:5.7.1"
 
-    implementation "org.java-websocket:Java-WebSocket:$javaWebsocketVersion"
-    implementation "org.msgpack:jackson-dataformat-msgpack:$msgpackVersion"
-    apiElements "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion"
+    implementation "org.java-websocket:Java-WebSocket:1.5.1"
+    implementation "org.msgpack:jackson-dataformat-msgpack:0.8.22"
+    apiElements "org.jetbrains.kotlin:kotlin-stdlib:1.4.32"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.3"
 }
 
 publish {
     def groupProjectID = 'io.github.doorbash'
     def artifactProjectID = 'colyseus-kotlin'
-    def publishVersionID = '0.14.1'
+    def publishVersionID = '0.14.2'
     userOrg = 'doorbash'
     repoName = 'io.github.doorbash'
     groupId = groupProjectID
