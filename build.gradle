@@ -4,7 +4,6 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.novoda:bintray-release:0.9'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.4.32"
     }
 }
@@ -13,7 +12,6 @@ plugins {
     id 'java'
 }
 
-apply plugin: 'com.novoda.bintray-release'
 apply plugin: 'kotlin'
 
 repositories {
@@ -27,19 +25,6 @@ dependencies {
     implementation "org.msgpack:jackson-dataformat-msgpack:0.8.22"
     apiElements "org.jetbrains.kotlin:kotlin-stdlib:1.4.32"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.3"
-}
-
-publish {
-    def groupProjectID = 'io.github.doorbash'
-    def artifactProjectID = 'colyseus-kotlin'
-    def publishVersionID = '0.14.4'
-    userOrg = 'doorbash'
-    repoName = 'io.github.doorbash'
-    groupId = groupProjectID
-    artifactId = artifactProjectID
-    publishVersion = publishVersionID
-    desc = 'Colyseus Client for Kotlin'
-    website = 'https://github.com/doorbash/colyseus-kotlin'
 }
 
 task runExampleJava(dependsOn: classes, type: JavaExec) {

@@ -10,7 +10,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'io.github.doorbash:colyseus-kotlin:0.14.4'
+    implementation 'com.github.doorbash:colyseus-kotlin:0.14.5'
 }
 ```
 
