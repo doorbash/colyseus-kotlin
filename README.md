@@ -167,8 +167,9 @@ send(3)
 
 ## Usage examples
 
-- [agar-io](https://github.com/doorbash/agar-io) - A simple agar.io clone made with Libgdx
+- [colyseus-kotlin-example](https://github.com/doorbash/colyseus-kotlin-example)
 - [colyseus-kotlin-java-example](https://github.com/doorbash/colyseus-kotlin-java-example)
+- [agar-io](https://github.com/doorbash/agar-io) - A simple agar.io clone made with Libgdx
 
 ## License
 
