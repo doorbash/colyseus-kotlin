@@ -169,6 +169,7 @@ send(3)
 
 - [colyseus-kotlin-example](https://github.com/doorbash/colyseus-kotlin-example)
 - [colyseus-kotlin-java-example](https://github.com/doorbash/colyseus-kotlin-java-example)
+- [colyseus-android-chat](https://github.com/doorbash/colyseus-android-chat) - A simple chat Android application
 - [agar-io](https://github.com/doorbash/agar-io) - A simple agar.io clone made with Libgdx
 
 ## License
